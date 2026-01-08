@@ -1,0 +1,106 @@
+/* Pre-screening Form Specific Styles */
+
+.prescreening-container {
+    padding-bottom: 4rem;
+    padding: 0.5rem;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.prescreening-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.prescreening-title {
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 850;
+    margin-bottom: 0.2rem;
+    background: linear-gradient(90deg, #6366f1, #ec4899);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: #6366f1;
+    letter-spacing: -1px;
+}
+
+.status-badge {
+    padding: 0.8rem 1.2rem;
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--glass-border);
+    font-size: 0.85rem;
+}
+
+.prescreening-card {
+    padding: clamp(2.5rem, 5vw, 4.5rem);
+    max-width: 100%;
+    margin: 0 auto;
+    border-left: 4px solid var(--primary);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.icon-box {
+    padding: 0.8rem;
+    background: var(--primary);
+    border-radius: 12px;
+}
+
+.form-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2.5rem;
+}
+
+.duplicate-alert {
+    margin-top: 0.5rem;
+    padding: 0.8rem;
+    border-radius: 8px;
+}
+
+.duplicate-field {
+    background: rgba(0, 150, 255, 0.1);
+    border: 1px solid rgba(0, 150, 255, 0.2);
+}
+
+.duplicate-master {
+    background: rgba(255, 171, 0, 0.1);
+    border: 1px solid rgba(255, 171, 0, 0.2);
+}
+
+.use-field-btn {
+    background: rgba(0, 150, 255, 0.2);
+    border: 1px solid #00bbff;
+    color: #00bbff;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.submit-container {
+    margin-top: 2.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.submit-btn {
+    width: 100%;
+    max-width: 400px;
+    padding: 1.2rem 2rem;
+    border-radius: 18px;
+    font-size: 1.1rem;
+    font-weight: 800;
+}

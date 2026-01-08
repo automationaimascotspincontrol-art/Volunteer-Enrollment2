@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Clinical Study Dashboard</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #ec4899;
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 2rem;
+        }
+
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 1.8rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 2rem;
+        }
+
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .grid-5 {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: 1fr 2fr;
+        }
+
+        .stat-title {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-top: 0.4rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            padding-bottom: 0.8rem;
+        }
+
+        td {
+            padding: 0.8rem 0;
+        }
+
+        tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .badge {
+            padding: 0.25rem 0.7rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+        }
+
+        .badge.ongoing {
+            background: #6366f1;
+        }
+
+        .badge.completed {
+            background: #10b981;
+        }
+
+        .badge.upcoming {
+            background: #f59e0b;
+        }
+
+        @media (max-width: 900px) {
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <h1>Clinical Study Dashboard</h1>
+
+        <!-- KPI ROW -->
+        <div class="grid grid-5">
+            <div class="glass-card">
+                <div class="stat-title">Total Studies</div>
+                <div class="stat-value">24</div>
+            </div>
+            <div class="glass-card">
+                <div class="stat-title">Upcoming Studies</div>
+                <div class="stat-value">6</div>
+            </div>
+            <div class="glass-card">
+                <div class="stat-title">Ongoing Today</div>
+                <div class="stat-value">4</div>
+            </div>
+            <div class="glass-card">
+                <div class="stat-title">Completed Today</div>
+                <div class="stat-value">2</div>
+            </div>
+            <div class="glass-card">
+                <div class="stat-title">Completed Till Date</div>
+                <div class="stat-value">18</div>
+            </div>
+        </div>
+
+        <br><br>
+
+        <!-- VOLUNTEERS + STUDIES -->
+        <div class="grid grid-3">
+
+            <div class="glass-card">
+                <h3>Volunteer Overview</h3>
+                <p>Total Volunteers: <strong>120</strong></p>
+                <p>Ongoing: <strong>45</strong></p>
+                <p>Registration: <strong>18</strong></p>
+            </div>
+
+            <div class="glass-card">
+                <h3>Study List</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Study Code</th>
+                            <th>Study Name</th>
+                            <th>Status</th>
+                            <th>Volunteers</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>ST-001</td>
+                            <td>Diabetes Phase I</td>
+                            <td><span class="badge ongoing">Ongoing</span></td>
+                            <td>12</td>
+                        </tr>
+                        <tr>
+                            <td>ST-002</td>
+                            <td>Hypertension</td>
+                            <td><span class="badge completed">Completed</span></td>
+                            <td>20</td>
+                        </tr>
+                        <tr>
+                            <td>ST-003</td>
+                            <td>Cardio Safety</td>
+                            <td><span class="badge upcoming">Upcoming</span></td>
+                            <td>—</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+    </div>
+</body>
+
+</html>

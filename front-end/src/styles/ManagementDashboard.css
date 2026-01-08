@@ -1,0 +1,108 @@
+/* Management Dashboard Specific Styles */
+
+/* 
+ * Reusable classes from global index.css used:
+ * - .dashboard-header, .dashboard-title, .dashboard-subtitle
+ * - .dashboard-grid
+ * - .stats-grid, .stat-card
+ * - .chart-card, .chart-title
+ * - .btn, .btn-primary
+ * - .form-control
+ * - .glass-card
+ */
+
+.management-dashboard {
+    padding-bottom: 3rem;
+}
+
+/* Quick Actions override or specific spacing */
+.quick-actions-section {
+    margin-bottom: 2rem;
+}
+
+/* Specific Chart Overrides if needed */
+.chart-area {
+    flex: 1;
+    min-height: 0;
+}
+
+/* Recent Activity List */
+.recent-activity-list {
+    display: grid;
+    gap: 0.8rem;
+}
+
+.activity-item {
+    padding: 1rem;
+    background: var(--bg-panel);
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.2s;
+}
+
+.activity-item:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.activity-info h4 {
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    color: var(--text-main);
+}
+
+.activity-info p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.activity-meta {
+    text-align: right;
+}
+
+.activity-contact {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.activity-date {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* Study Selector Section */
+.study-selector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.study-controls {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.study-select {
+    min-width: 200px;
+}
+
+/* Dashboard Grid Special Layouts */
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.top-areas-chart {
+    background: var(--bg-panel);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    min-height: 350px;
+}

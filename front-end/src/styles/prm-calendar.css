@@ -1,0 +1,113 @@
+.sunday-red {
+  background-color: rgba(255, 0, 0, 0.05) !important;
+}
+
+.fc-day-sun .fc-col-header-cell-cushion {
+  color: #ef4444 !important;
+  /* Tailwind red-500 */
+  font-weight: bold;
+}
+
+/* Hover Effects for Calendar Days */
+.fc-daygrid-day {
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.fc-daygrid-day:hover {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+  cursor: pointer;
+  position: relative;
+  z-index: 5;
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+/* Enhancing Event Visibility */
+.fc-event {
+  cursor: pointer;
+  transition: transform 0.1s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: none !important;
+}
+
+.fc-event:hover {
+  transform: scale(1.02);
+  filter: brightness(1.1);
+}
+
+/* Dark Theme overrides for FullCalendar */
+.fc {
+  color: var(--text-main);
+}
+
+.fc-theme-standard .fc-scrollgrid {
+  border-color: var(--glass-border) !important;
+}
+
+.fc th,
+.fc td {
+  border-color: var(--glass-border) !important;
+}
+
+.fc-daygrid-day-number {
+  color: var(--text-muted);
+  text-decoration: none !important;
+  padding: 8px !important;
+  font-weight: 500;
+}
+
+.fc-col-header-cell-cushion {
+  color: var(--text-muted);
+  text-decoration: none !important;
+  padding: 12px 0 !important;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+}
+
+.fc-button-primary {
+  background-color: var(--bg-panel) !important;
+  border-color: var(--glass-border) !important;
+  color: var(--text-main) !important;
+  text-transform: capitalize;
+  font-weight: 600;
+  border-radius: 8px !important;
+  padding: 0.5rem 1rem !important;
+  transition: all 0.2s !important;
+}
+
+.fc-button-primary:hover {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: white !important;
+}
+
+.fc-button-active {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: white !important;
+}
+
+.fc-day-today {
+  background-color: rgba(99, 102, 241, 0.05) !important;
+}
+
+/* Side Panel Styles */
+.calendar-side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.study-list-item {
+  padding: 1rem;
+  border-radius: 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--glass-border);
+  transition: all 0.2s;
+}
+
+.study-list-item:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}

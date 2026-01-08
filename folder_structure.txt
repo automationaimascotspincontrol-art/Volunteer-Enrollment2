@@ -1,0 +1,31 @@
+PROJECT FOLDER STRUCTURE
+========================
+
+/Enrollment (Root)
+├── /back-end                     # FastAPI Application
+│   ├── /app                      # Core Logic (Auth, DB, Models, Routers)
+│   ├── /migrations               # Data Import & Migration Scripts (+ Raw Excel)
+│   ├── /utils                    # Admin Tools (User Seeding, Study Sync)
+│   ├── /testing                  # DB Health Checks & Data Analysis Scripts
+│   ├── requirements.txt          # Python Dependencies
+│   └── .env                      # Environment Secrets
+│
+├── /front-end                    # React 19 Application
+│   ├── /public                   # Static Assets
+│   ├── /src
+│   │   ├── /api                  # Axios Centralized Instance
+│   │   ├── /components           # Global UI Components
+│   │   ├── /context              # Auth & Role Management
+│   │   ├── /pages                # Application Views (Admin, Auth, Field, Recruiter)
+│   │   ├── /routes               # Role-protected Route Wrappers
+│   │   ├── App.jsx               # Navigation & Global Routing
+│   │   └── index.css             # Glassmorphism Design System
+│   ├── package.json              # Frontend Dependencies
+│   └── vite.config.js            # Build Configuration
+│
+└── /documentation (Key Text Files)
+    ├── backend_architecture.txt  # System Architecture & Middleware 
+    ├── database_structure.txt    # MongoDB Schemas & Data Flow
+    ├── frontend_structure.txt    # UI/UX & Mobile-First Design
+    ├── system_flow_and_diagram.txt # End-to-End Business Logic
+    └── folder_structure.txt      # This File (Master Map)

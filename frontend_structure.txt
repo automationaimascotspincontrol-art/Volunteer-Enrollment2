@@ -1,0 +1,45 @@
+FRONTEND ARCHITECTURE & FEATURES OUTLINE
+==========================================
+
+1. TECH STACK & DESIGN SYSTEM
+-----------------------------
+Framework:       React 19 (Hooks, Functional)
+Routing:         React Router DOM v6 (Private & Role-based)
+Design Language: Premium Glassmorphism (Vibrant gradients, translucent cards)
+Typography:      Fluid/Adaptive using `clamp(min, preferred, max)`
+Icons:           Lucide React (Responsive SVG icons)
+API Client:      Axios (Centralized with JWT Interceptors & 401 recovery)
+
+2. MOBILE-FIRST ARCHITECTURE
+----------------------------
+A. Responsive Navigation
+   - Desktop: Full sidebar/navbar integration.
+   - Mobile: Slick Hamburger Menu (`Menu`/`X` transition) with safe-area padding.
+
+B. Adaptive Layouts
+   - Grid System: `auto-fit` with `minmax` for auto-stacking columns.
+   - Flex-Card Fallback: Tables automatically transition to card-based views on mobile (User Management) to maintain "Delete" and "Edit" action visibility.
+   - Horizontal Tablet Scroll: Ensures large clinical tables remain usable on small screens via `overflow-x: auto`.
+
+3. KEY PAGES & COMPONENTS
+-------------------------
+/pages/auth
+  Login.jsx      -> Role-aware redirection (GM -> Admin Dashboard).
+/pages/recruiter
+  Dashboard.jsx  -> Live stats & Clinical Explorer.
+  ManagementDashboard.jsx -> Master oversight for management roles.
+/pages/admin
+  UserManagement.jsx -> Responsive user control center with flex-card mobile layout.
+
+4. USER ROLE PERMISSIONS
+------------------------
+- Game Master: Exclusive access to "Manage Users" and "Master Audit Logs".
+- Management: Access to high-level trends and clinical exports.
+- Recruiter: Access to enrollment, search, and medical forms.
+- Field Agent: Streamlined data entry for field visits only.
+
+5. INTEGRATION & PERFORMANCE
+----------------------------
+- Code Splitting: Pages are organized for efficient loading.
+- Animated Transitions: All page changes use `animate-fade-in` for a premium feel.
+- Error Handling: Interactive error messages for login failures and validation issues.

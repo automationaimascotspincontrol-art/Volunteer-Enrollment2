@@ -1,0 +1,33 @@
+/* DARK THEME (Explicit overrides if needed beyond root) */
+[data-theme="dark"] {
+    --bg-main: #05070d;
+    --bg-card: #0f172a;
+    --bg-panel: rgba(0, 0, 0, 0.4);
+    --bg-input: #1e293b;
+
+    --text-primary: #f8fafc;
+    --text-muted: #94a3b8;
+
+    --accent: #38bdf8;
+    --border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* LIGHT THEME */
+[data-theme="light"] {
+    --bg-main: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-panel: #f1f5f9;
+    --bg-input: #e2e8f0;
+
+    --text-primary: #0f172a;
+    --text-muted: #475569;
+    --text-inverse: #ffffff;
+
+    --accent: #2563eb;
+    --border-color: #e2e8f0;
+
+    /* Adjust charts for better contrast on light */
+    --chart-blue: #2563eb;
+    --chart-pink: #db2777;
+    --chart-yellow: #ca8a04;
+}

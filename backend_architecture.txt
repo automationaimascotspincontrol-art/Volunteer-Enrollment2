@@ -1,0 +1,67 @@
+BACKEND ARCHITECTURE & FEATURES OUTLINE
+=========================================
+
+1. SYSTEM ARCHITECTURE & SCALE
+------------------------------
+Framework:      FastAPI (Python) - High performance, async-ready
+Server:         Uvicorn (ASGI Server)
+Database:       MongoDB (via Motor Async Driver)
+Auth Protocol:  OAuth2 with JWT (JSON Web Tokens)
+CORS:           Restricted to ALLOWED_ORIGINS (Production Secure)
+Middleware:     7-Layer Security & Context Stack
+
+2. CORE FEATURES & MODULES
+--------------------------
+
+A. Production Security Hardening
+   - Brute-Force Protection: Rate limiting via `slowapi` (10 login attempts/min).
+   - Security Headers: Injected HSTS, X-Frame-Options (DENY), X-Content-Type-Options (nosniff), and XSS Protection.
+   - CORS Lockdown: Strictly limited to authorized frontend origins.
+   - Secret Management: Strong `SECRET_KEY` requirement for JWT signing.
+
+B. The Gatekeeper Middleware Stack (Ordered)
+   1. Request Identification: Generates unique `X-Request-ID` for every trace.
+   2. CORS & Headers: Validates origins and injects security shields.
+   3. Global Error Handling: Root catch-all level to prevent crashes and leakers.
+   4. Audit Logging: Automatic console/file logging for all data-modifying requests (POST/PUT/DELETE).
+   5. Performance Tracing: Attaches `X-Process-Time` to every response.
+
+C. Volunteer Management (app/routers/)
+   - Pre-Screening: Initial variable data collection from field/walk-ins.
+   - Medical Registration: Conversion of pre-screened leads into registered volunteers.
+   - Deduplication: Smart checking across Master DB and Field Visits.
+
+D. Clinical Study Management (app/routers/clinical.py)
+   - Study Catalog: Managing list of active clinical studies.
+   - Participation Tracking: Assigning volunteers and tracking lifecycle (Enrolled/Completed).
+   - Reporting: Dynamic Excel exports for clinical analytics.
+
+3. FOLDER STRUCTURE & ORGANIZATION
+----------------------------------
+/app
+  /auth         -> Authentication logic (JWT, Hashing)
+  /db           -> Database connection & settings
+  /models       -> Pydantic Schemas (Data Validation)
+  /routers      -> API Endpoint Definitions (Routes)
+  main.py       -> "Gatekeeper" Entry Point & Middleware Stack
+/migrations
+  - Data migration scripts (Excel to MongoDB)
+  - Raw data source files (.xlsx)
+/utils
+  - Administrative scripts (User seeding, study setup)
+/testing
+  - Database verification & Data health analysis scripts
+
+4. API ENDPOINT SUMMARY
+-----------------------
+- POST /auth/login               -> Authenticate user (Rate Limited)
+- GET  /dashboard/stats          -> General Analytics
+- GET  /clinical/studies         -> List available studies
+- POST /users/register           -> Create new system member (GM only)
+- DELETE /users/{username}       -> Remove system member (GM only)
+
+5. SCALABILITY & RELIABILITY
+----------------------------
+- Fault Tolerance: Global exception handler ensures 500 errors are silent and safe.
+- Tracing: Unique Request IDs allow debugging individual clicks across thousands of logs.
+- Performance: AsyncIO logic ensures non-blocking database queries.

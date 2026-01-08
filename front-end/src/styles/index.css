@@ -1,0 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+:root {
+
+  /* BACKGROUNDS */
+  --bg-main: #0b1020;
+  --bg-card: rgba(255, 255, 255, 0.08);
+  --bg-panel: rgba(0, 0, 0, 0.2);
+  --bg-input: rgba(0, 0, 0, 0.3);
+
+  /* TEXT */
+  --text-primary: #ffffff;
+  --text-muted: #b8c0ff;
+  --text-inverse: #0f172a;
+
+  /* BRAND & STATUS */
+  --primary: #6366f1;
+  --secondary: #ec4899;
+  --accent: #6ee7ff;
+
+  --info: #60a5fa;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --error: #f43f5e;
+  /* Legacy support */
+
+  /* CHARTS */
+  --chart-blue: #3b82f6;
+  --chart-pink: #ec4899;
+  --chart-yellow: #eab308;
+  --chart-cyan: #22d3ee;
+  --chart-purple: #a78bfa;
+
+  /* BORDERS */
+  --border-color: rgba(255, 255, 255, 0.1);
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  margin: 0;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}

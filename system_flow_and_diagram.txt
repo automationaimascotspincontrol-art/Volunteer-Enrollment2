@@ -1,0 +1,58 @@
+END-TO-END SYSTEM FLOW & CONNECTIVITY DIAGRAM
+=============================================
+
+1. THE NARRATIVE FLOW (Lifecycle of a Volunteer)
+------------------------------------------------
+
+PHASE 1: THE FIELD (Agent)
+1. Agent enters details on a mobile device (Offline-first readiness).
+2. Data hits the "Gatekeeper" (Middleware Stack) for basic security & tracing.
+3. Record saved in `field_visits` (Status: Draft).
+
+PHASE 2: THE CLINIC (Recruiter)
+1. Recruiter searches by contact number via unified Search API.
+2. "Convert to Enrollment" triggers a migration from `field_visits` to `volunteers_master`.
+3. Sequential ID (e.g. MUV0005) is minted atomically.
+4. "Medical Registration" finalized, assigning a Clinical Study (triggers `clinical_participation` entry).
+
+PHASE 3: THE BOARDROOM (Management/Game Master)
+1. Game Master logs in and is redirected to the "Master View" (ManagementDashboard).
+2. GM can Audit, Create/Delete users, and Export study data for compliance.
+
+2. SECURITY: THE "GATEKEEPER" LAYER
+-----------------------------------
+Every request follows this path:
+[Frontend] -> (CORS Filter) -> (X-Request-ID Generator) -> (Global Error Catch) -> (Rate Limiter) -> (JWT Auth) -> [API Route Logic]
+
+3. PAGE-TO-DATABASE MAPPING
+---------------------------
+| Page                | Role     | Action                 | Collection Impact |
+|---------------------|----------|------------------------|-------------------|
+| Login.jsx           | All      | Verify Credentials     | `users`           |
+| FieldForm.jsx       | Field    | Save Draft             | `field_visits`    |
+| PreScreeningForm.jsx| Recruiter| Create Master Record   | `volunteers_master`|
+| ManagementDashboard.jsx| GM/Mgmt| Aggregate View         | `ALL COLLECTIONS` |
+| UserManagement.jsx  | GM       | Admin Control          | `users`           |
+
+4. SYSTEM DATA FLOW DIAGRAM (VISUALIZED)
+----------------------------------------
+
+[ USER INTERFACE ]           [ THE GATEKEEPER ]          [ SECURE DATA CORE ]
+      |                           |                          |
+(Mobile/Desktop)                  |                          |
+      |--- 1. REST API Call ----> | --- Security Filters --> |
+      |                           | --- Trace ID assigned -> |
+      |                           |                          |
+      | <--- 2. Valid Response ---| <--- Data Processing --- | [ MongoDB Atlas ]
+      |                           |          ^               |       |
+      |                           |          |               | [Users, Volunteers]|
+      |                           |          +---------------| [Clinical, Visits] |
+      |                           |                          |
+(Audit Logs Output) <-------------| --- Log Method + ID ---- | (Traceability)
+
+5. AUTHENTICATION & REDIRECTION LOGIC
+-------------------------------------
+- Role=game_master  -> Redirect: /admin/dashboard
+- Role=management   -> Redirect: /admin/dashboard
+- Role=recruiter    -> Redirect: /dashboard/stats
+- Role=field        -> Redirect: /field/form

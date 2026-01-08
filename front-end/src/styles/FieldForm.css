@@ -1,0 +1,80 @@
+/* Field Visit Form Specific Styles */
+
+.field-form-container {
+    padding: clamp(0.5rem, 3vw, 2rem) 0.5rem;
+    padding-bottom: 4rem;
+    display: flex;
+    justify-content: center;
+}
+
+.field-card {
+    width: 100%;
+    max-width: 600px;
+    padding: clamp(1.5rem, 5vw, 2.5rem);
+    border-radius: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.field-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.field-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.field-subtitle {
+    color: var(--text-muted);
+}
+
+.field-steps-indicator {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+.step-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.step-dot.active {
+    background: var(--primary);
+    transform: scale(1.2);
+}
+
+.location-status {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    color: var(--success);
+    padding: 0.8rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.submit-btn-field {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-top: 1rem;
+}

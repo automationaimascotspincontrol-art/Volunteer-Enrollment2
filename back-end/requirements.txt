@@ -1,0 +1,11 @@
+﻿fastapi[all]
+motor
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+pydantic-settings
+bcrypt>=4.0.0
+pandas
+openpyxl
+requests
+slowapi

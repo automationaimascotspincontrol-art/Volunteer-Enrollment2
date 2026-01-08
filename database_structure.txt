@@ -1,0 +1,71 @@
+DATABASE STRUCTURE & CONNECTION DETAILS
+========================================
+
+1. CONNECTION DETAILS
+---------------------
+Database System: MongoDB (NoSQL)
+Connection URI:  Defined via MONGODB_URL in .env
+Database Name:   live_enrollment_db
+Driver Used:     Motor (Python AsyncIO Driver for MongoDB)
+
+2. COLLECTIONS OVERVIEW
+-----------------------
+1. volunteers_master     -> Primary repository for pre-screened and registered volunteers.
+2. field_visits          -> Draft records from agents; converted to master upon approval.
+3. clinical_studies      -> Catalog of active studies (e.g., COSMETIC_ACNE).
+4. clinical_participation -> Tracking status of specific volunteers within assigned studies.
+5. users                 -> Authentication/Authorization (RBAC enforced).
+6. counters              -> Sequential ID generation (MUVXXXXX) via atomic operations.
+
+3. DETAILED SCHEMA DEFINITIONS
+------------------------------
+
+A. Collection: `users`
+   Purpose: System access control.
+   {
+       "username": String (Unique),
+       "full_name": String,
+       "hashed_password": String,
+       "role": Enum ("field", "recruiter", "management", "game_master"),
+       "disabled": Boolean (Default: false)
+   }
+
+B. Collection: `volunteers_master`
+   Highlights: Sequential IDs, lifecycle stage tracking.
+   {
+       "volunteer_id": String (e.g., "MUV0001"),
+       "stage": Enum ("pre_screening", "registered"),
+       "status": Enum ("submitted", "approved", "rejected"),
+       "pre_screening": {
+           "name": String,
+           "dob": DateString,
+           "gender": String,
+           "contact": String,
+           "source": String
+       },
+       "registration": {
+           "date_of_registration": DateString,
+           "fit_status": Enum ("yes", "no"),
+           "study_assigned": Array[String]
+       },
+       "audit": {
+           "created_at": DateTime,
+           "updated_at": DateTime,
+           "created_by_ip": String (Logged via Middleware)
+       }
+   }
+
+C. Collection: `clinical_participation`
+   Highlights: Joins volunteers to specific studies with status tracking.
+   {
+       "study": { "study_code": String, "study_name": String },
+       "volunteer_id": String,
+       "status": Enum ("screened", "enrolled", "completed", "rejected"),
+       "volunteer_ref": { "name": String, "contact": String, "sex": String, "age": Int }
+   }
+
+4. DATA FLOW & INTEGRITY
+------------------------
+- Atomic Counters: The `counters` collection prevents "ID skipping" or duplicates during concurrent registration of volunteers.
+- Audit Logging: Every modification (POST/PUT/DELETE) is tracked via backend middleware, capturing the Request ID and Client IP for compliance.
+- RBAC Enforcement: Access to `users` and `clinical_participation` is strictly gated by role-based dependencies in the API layer.
