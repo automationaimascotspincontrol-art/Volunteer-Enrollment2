@@ -2,24 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/api';
-import { Search, FileDown, Calendar, Users, ArrowRight, Activity, Clock, Filter, Trash2 } from 'lucide-react';
+import { Search, FileDown, Calendar, Users, ArrowRight, Activity, Clock, Filter, Trash2, ChevronRight } from 'lucide-react';
 
-// --- Styled Components & Helpers ---
+// --- Helper Functions ---
 
 const getStatusStyles = (status) => {
     const s = (status || '').toLowerCase();
     switch (s) {
-        case 'fit': return { bg: '#dcfce7', text: '#166534', border: '#bbf7d0' };
-        case 'unfit': return { bg: '#fee2e2', text: '#991b1b', border: '#fecaca' };
-        case 'withdrew': return { bg: '#f3f4f6', text: '#374151', border: '#d1d5db' };
-        case 'completed': return { bg: '#e0f2fe', text: '#0369a1', border: '#bae6fd' };
-        default: return { bg: '#fef3c7', text: '#b45309', border: '#fde68a' };
+        case 'fit': return { bg: '#d1fae5', text: '#065f46', label: 'Fit' };
+        case 'unfit': return { bg: '#fee2e2', text: '#991b1b', label: 'Unfit' };
+        case 'withdrew': return { bg: '#f3f4f6', text: '#374151', label: 'Withdrew' };
+        case 'completed': return { bg: '#dbeafe', text: '#1e40af', label: 'Completed' };
+        default: return { bg: '#fef3c7', text: '#92400e', label: status || 'Pending' };
     }
 };
 
-// Helper to determine study status based on dates
 const getStudyStatus = (study) => {
-    if (!study.startDate || !study.endDate) return 'ongoing'; // Default if no dates
+    if (!study.startDate || !study.endDate) return 'ongoing';
 
     const now = new Date();
     const start = new Date(study.startDate);
@@ -33,126 +32,140 @@ const getStudyStatus = (study) => {
 const getStudyStatusBadge = (status) => {
     switch (status) {
         case 'upcoming':
-            return {
-                bg: '#3b82f6',
-                light: '#dbeafe',
-                text: 'white',
-                label: 'Upcoming',
-                icon: '📅'
-            };
+            return { bg: '#3b82f6', light: '#eff6ff', text: 'white', label: 'Upcoming', icon: '📅', accent: '#2563eb' };
         case 'ongoing':
-            return {
-                bg: '#10b981',
-                light: '#d1fae5',
-                text: 'white',
-                label: 'Ongoing',
-                icon: '▶'
-            };
+            return { bg: '#10b981', light: '#f0fdf4', text: 'white', label: 'Ongoing', icon: '▶', accent: '#059669' };
         case 'completed':
-            return {
-                bg: '#f59e0b',
-                light: '#fef3c7',
-                text: 'white',
-                label: 'Completed',
-                icon: '✓'
-            };
+            return { bg: '#f59e0b', light: '#fffbeb', text: 'white', label: 'Completed', icon: '✓', accent: '#d97706' };
         default:
-            return {
-                bg: '#64748b',
-                light: '#f1f5f9',
-                text: 'white',
-                label: 'Active',
-                icon: '⚡'
-            };
+            return { bg: '#64748b', light: '#f8fafc', text: 'white', label: 'Active', icon: '⚡', accent: '#475569' };
     }
 };
 
+// --- Components ---
+
 const VolunteerCard = ({ vol, onDelete }) => {
-    const statusStyles = getStatusStyles(vol.status);
+    const statusInfo = getStatusStyles(vol.status);
     const isWithdrawn = vol.status === 'withdrew';
 
     return (
-        <div style={{
-            background: 'white',
-            border: '1px solid #e5e7eb',
-            borderLeft: `3px solid ${statusStyles.text}`,
-            padding: '0.875rem 1.125rem',
-            borderRadius: '8px',
+        <div className="volunteer-card" style={{
+            background: '#ffffff',
+            border: '1px solid #f1f5f9',
+            borderLeft: `3px solid ${statusInfo.text}`,
+            padding: '1rem',
+            borderRadius: '10px',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.875rem',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-            transition: 'all 0.15s',
-            opacity: isWithdrawn ? 0.6 : 1,
-            minHeight: '64px'
+            gap: '1rem',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            opacity: isWithdrawn ? 0.7 : 1,
+            position: 'relative',
+            overflow: 'hidden'
         }}>
-            {/* Volunteer Avatar */}
+            {/* Subtle gradient overlay */}
             <div style={{
-                width: '38px', height: '38px', borderRadius: '8px',
-                background: isWithdrawn ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: '700', fontSize: '0.9rem', flexShrink: 0,
-                boxShadow: '0 2px 4px rgba(102, 126, 234, 0.2)'
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '120px',
+                height: '100%',
+                background: `linear-gradient(90deg, transparent, ${statusInfo.bg}15)`,
+                pointerEvents: 'none'
+            }} />
+
+            {/* Avatar */}
+            <div style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '10px',
+                background: isWithdrawn ? '#9ca3af' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: '700',
+                fontSize: '1rem',
+                flexShrink: 0,
+                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)',
+                position: 'relative',
+                zIndex: 1
             }}>
                 {vol.volunteer_name ? vol.volunteer_name[0].toUpperCase() : 'V'}
             </div>
 
-            {/* Volunteer Info */}
-            <div style={{ flex: 1, minWidth: 0 }}>
+            {/* Info */}
+            <div style={{ flex: 1, minWidth: 0, position: 'relative', zIndex: 1 }}>
                 <div style={{
-                    fontWeight: '600', fontSize: '0.9rem', color: '#111827',
+                    fontWeight: '600',
+                    fontSize: '0.9375rem',
+                    color: '#0f172a',
                     textDecoration: isWithdrawn ? 'line-through' : 'none',
-                    marginBottom: '0.125rem'
+                    marginBottom: '0.25rem'
                 }}>
                     {vol.volunteer_name}
                 </div>
-                <div style={{ fontSize: '0.72rem', color: '#6b7280', fontFamily: 'monospace', fontWeight: '500' }}>
+                <div style={{
+                    fontSize: '0.75rem',
+                    color: '#64748b',
+                    fontFamily: 'ui-monospace, monospace',
+                    fontWeight: '500'
+                }}>
                     {vol.volunteer_id}
                 </div>
             </div>
 
             {/* Status Badge */}
             <div style={{
-                background: statusStyles.bg,
-                color: statusStyles.text,
-                padding: '0.375rem 0.75rem',
+                background: statusInfo.bg,
+                color: statusInfo.text,
+                padding: '0.375rem 0.875rem',
                 borderRadius: '6px',
-                fontSize: '0.72rem',
+                fontSize: '0.75rem',
                 fontWeight: '600',
                 textTransform: 'capitalize',
-                flexShrink: 0
+                flexShrink: 0,
+                position: 'relative',
+                zIndex: 1
             }}>
-                {vol.status}
+                {statusInfo.label}
             </div>
 
             {/* Delete Button */}
             <button
                 onClick={() => onDelete && onDelete(vol._id)}
-                title="Remove volunteer from study"
+                className="delete-btn"
+                title="Remove volunteer"
                 style={{
                     background: 'transparent',
                     color: '#ef4444',
-                    border: '1px solid #fecaca',
-                    borderRadius: '6px',
+                    border: 'none',
+                    borderRadius: '8px',
                     padding: '0.5rem',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    transition: 'all 0.15s',
-                    flexShrink: 0
-                }}
-                onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#fef2f2';
-                    e.currentTarget.style.borderColor = '#ef4444';
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.borderColor = '#fecaca';
+                    transition: 'all 0.2s',
+                    flexShrink: 0,
+                    position: 'relative',
+                    zIndex: 1
                 }}
             >
-                <Trash2 size={16} />
+                <Trash2 size={17} />
             </button>
+
+            <style>{`
+                .volunteer-card:hover {
+                    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+                    transform: translateY(-1px);
+                    border-color: #e2e8f0;
+                }
+                .delete-btn:hover {
+                    background: #fef2f2;
+                    color: #dc2626;
+                }
+            `}</style>
         </div>
     );
 };
@@ -163,15 +176,13 @@ const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
     const statusBadge = getStudyStatusBadge(studyStatus);
 
     const handleVolunteerDelete = async (volunteerId) => {
-        if (!window.confirm('Are you sure you want to remove this volunteer from the study?')) {
-            return;
-        }
+        if (!window.confirm('Remove this volunteer from the study?')) return;
 
         try {
             await api.delete(`/assigned-studies/${volunteerId}`);
             onAssignmentUpdate();
         } catch (e) {
-            console.error('Failed to delete volunteer:', e);
+            console.error('Failed to delete:', e);
             alert("Failed to remove volunteer");
         }
     };
@@ -183,7 +194,7 @@ const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `${study.studyCode}_Volunteers_${new Date().toISOString().split('T')[0]}.xlsx`);
+            link.setAttribute('download', `${study.studyCode}_${new Date().toISOString().split('T')[0]}.xlsx`);
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -197,67 +208,70 @@ const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
     };
 
     return (
-        <div style={{
-            background: 'white',
-            border: '1px solid #e5e7eb',
-            borderRadius: '12px',
+        <div className="study-card" style={{
+            background: '#ffffff',
+            border: '1px solid #f1f5f9',
+            borderRadius: '16px',
             marginBottom: '1.5rem',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
             overflow: 'hidden',
-            transition: 'all 0.2s ease'
-        }}
-            onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
-                e.currentTarget.style.transform = 'translateY(0)';
-            }}
-        >
-            {/* Study Header */}
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            position: 'relative'
+        }}>
+            {/* Header */}
             <div style={{
                 padding: '1.5rem',
-                background: `linear-gradient(135deg, ${statusBadge.light}55 0%, ${statusBadge.light}22 100%)`,
-                borderBottom: `2px solid ${statusBadge.bg}`,
+                background: `linear-gradient(135deg, ${statusBadge.light} 0%, ${statusBadge.light}cc 100%)`,
+                borderBottom: `1px solid ${statusBadge.bg}22`,
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                gap: '1.25rem'
+                gap: '1.25rem',
+                position: 'relative'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
-                    {/* Status Badge Icon */}
+                {/* Accent bar */}
+                <div style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: '4px',
+                    background: `linear-gradient(180deg, ${statusBadge.bg}, ${statusBadge.accent})`
+                }} />
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, paddingLeft: '0.5rem' }}>
+                    {/* Status Icon */}
                     <div style={{
-                        width: '44px',
-                        height: '44px',
-                        borderRadius: '10px',
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
                         background: statusBadge.bg,
                         color: statusBadge.text,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '1.25rem',
+                        fontSize: '1.5rem',
                         fontWeight: '700',
-                        boxShadow: `0 4px 12px ${statusBadge.bg}44`,
+                        boxShadow: `0 4px 16px ${statusBadge.bg}44`,
                         flexShrink: 0
                     }}>
                         {statusBadge.icon}
                     </div>
 
-                    {/* Timeline Indicator */}
+                    {/* Timeline Icon */}
                     {study.hasTimeline && (
                         <div style={{
-                            width: '44px',
-                            height: '44px',
-                            borderRadius: '10px',
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: '12px',
                             background: 'linear-gradient(135deg, #ec4899, #be185d)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            boxShadow: '0 4px 12px rgba(236, 72, 153, 0.3)',
+                            boxShadow: '0 4px 16px rgba(236, 72, 153, 0.3)',
                             flexShrink: 0
                         }} title="Has Timeline">
-                            <Clock size={20} color="white" />
+                            <Clock size={22} color="white" />
                         </div>
                     )}
 
@@ -269,11 +283,11 @@ const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
                             color: statusBadge.text,
                             fontSize: '0.75rem',
                             fontWeight: '700',
-                            letterSpacing: '0.3px',
+                            letterSpacing: '0.5px',
                             textTransform: 'uppercase',
                             marginBottom: '0.5rem',
-                            fontFamily: 'monospace',
-                            padding: '0.35rem 0.75rem',
+                            fontFamily: 'ui-monospace, monospace',
+                            padding: '0.375rem 0.875rem',
                             borderRadius: '6px',
                             boxShadow: `0 2px 8px ${statusBadge.bg}33`
                         }}>
@@ -282,30 +296,32 @@ const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
                         <div style={{
                             fontSize: '1.125rem',
                             fontWeight: '700',
-                            color: '#111827',
-                            marginBottom: '0.5rem',
+                            color: '#0f172a',
+                            marginBottom: '0.625rem',
                             lineHeight: '1.4'
                         }}>
                             {study.studyName}
                         </div>
-                        <div style={{ display: 'flex', gap: '1.25rem', fontSize: '0.8rem', color: '#64748b', flexWrap: 'wrap' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: '600' }}>
-                                <Users size={14} style={{ color: '#94a3b8' }} />
+
+                        {/* Meta Info Row */}
+                        <div style={{ display: 'flex', gap: '1.25rem', fontSize: '0.8125rem', color: '#64748b', flexWrap: 'wrap', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '600' }}>
+                                <Users size={15} style={{ color: '#94a3b8' }} />
                                 <span><strong style={{ color: '#475569' }}>{assignments.length}</strong> Volunteers</span>
                             </div>
                             <div style={{
-                                padding: '0.25rem 0.625rem',
+                                padding: '0.25rem 0.75rem',
                                 background: statusBadge.bg,
                                 color: statusBadge.text,
                                 borderRadius: '6px',
-                                fontSize: '0.72rem',
+                                fontSize: '0.75rem',
                                 fontWeight: '700'
                             }}>
                                 {statusBadge.label}
                             </div>
                         </div>
 
-                        {/* Timeline Dates Block */}
+                        {/* Timeline Dates */}
                         {(study.startDate || study.endDate) && (
                             <div style={{
                                 display: 'inline-flex',
@@ -318,21 +334,20 @@ const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
                                 borderRadius: '8px',
                                 fontSize: '0.75rem',
                                 fontWeight: '600',
-                                color: '#64748b',
-                                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                color: '#64748b'
                             }}>
                                 <Calendar size={14} style={{ color: '#94a3b8' }} />
                                 {study.startDate && (
                                     <span style={{ color: '#10b981' }}>
-                                        {new Date(study.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        {new Date(study.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                     </span>
                                 )}
                                 {study.startDate && study.endDate && (
-                                    <ArrowRight size={12} style={{ color: '#cbd5e1' }} />
+                                    <ChevronRight size={12} style={{ color: '#cbd5e1' }} />
                                 )}
                                 {study.endDate && (
                                     <span style={{ color: '#f59e0b' }}>
-                                        {new Date(study.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        {new Date(study.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                     </span>
                                 )}
                             </div>
@@ -344,25 +359,26 @@ const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
                 <button
                     onClick={handleStudyExport}
                     disabled={exportingStudy}
+                    className="export-btn"
                     style={{
                         background: '#10b981',
                         color: 'white',
                         border: 'none',
-                        padding: '0.625rem 1.125rem',
-                        borderRadius: '8px',
-                        fontSize: '0.8rem',
+                        padding: '0.75rem 1.25rem',
+                        borderRadius: '10px',
+                        fontSize: '0.8125rem',
                         fontWeight: '600',
                         cursor: exportingStudy ? 'not-allowed' : 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.5rem',
                         boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
-                        transition: 'all 0.15s',
+                        transition: 'all 0.2s',
                         opacity: exportingStudy ? 0.6 : 1,
                         flexShrink: 0
                     }}
                 >
-                    <FileDown size={16} />
+                    <FileDown size={17} />
                     {exportingStudy ? 'Exporting...' : 'Export'}
                 </button>
             </div>
@@ -371,49 +387,62 @@ const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
             {assignments.length === 0 ? (
                 <div style={{
                     textAlign: 'center',
-                    padding: '3rem 1.5rem',
+                    padding: '4rem 1.5rem',
                     color: '#94a3b8'
                 }}>
-                    <Users size={44} style={{ marginBottom: '0.75rem', color: '#cbd5e1' }} />
-                    <p style={{ fontWeight: '600', fontSize: '0.9rem', color: '#64748b' }}>No volunteers assigned</p>
+                    <div style={{
+                        width: '64px',
+                        height: '64px',
+                        margin: '0 auto 1rem',
+                        borderRadius: '16px',
+                        background: '#f8fafc',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <Users size={32} style={{ color: '#cbd5e1' }} />
+                    </div>
+                    <p style={{ fontWeight: '600', fontSize: '0.9375rem', color: '#64748b', margin: 0 }}>
+                        No volunteers assigned
+                    </p>
                 </div>
             ) : (
-                <div>
+                <>
                     <div style={{
-                        padding: '0.875rem 1.5rem',
-                        background: '#f9fafb',
-                        borderBottom: '1px solid #e5e7eb',
+                        padding: '1rem 1.5rem',
+                        background: '#fafbfc',
+                        borderBottom: '1px solid #f1f5f9',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center'
                     }}>
                         <div style={{
-                            fontSize: '0.8rem',
+                            fontSize: '0.8125rem',
                             fontWeight: '700',
-                            color: '#374151',
+                            color: '#475569',
                             textTransform: 'uppercase',
-                            letterSpacing: '0.3px'
+                            letterSpacing: '0.5px'
                         }}>
                             Assigned Volunteers
                         </div>
                         <div style={{
-                            padding: '0.25rem 0.625rem',
+                            padding: '0.25rem 0.75rem',
                             background: '#e5e7eb',
-                            color: '#374151',
+                            color: '#475569',
                             borderRadius: '12px',
-                            fontSize: '0.72rem',
+                            fontSize: '0.75rem',
                             fontWeight: '700'
                         }}>
                             {assignments.length}
                         </div>
                     </div>
                     <div style={{
-                        maxHeight: '360px',
+                        maxHeight: '400px',
                         overflowY: 'auto',
-                        padding: '1rem 1.25rem',
-                        background: '#fafbfc'
+                        padding: '1.25rem',
+                        background: '#fcfcfd'
                     }}>
-                        <div style={{ display: 'grid', gap: '0.625rem' }}>
+                        <div style={{ display: 'grid', gap: '0.75rem' }}>
                             {assignments.map(vol => (
                                 <VolunteerCard
                                     key={vol._id}
@@ -423,13 +452,25 @@ const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
                             ))}
                         </div>
                     </div>
-                </div>
+                </>
             )}
+
+            <style>{`
+                .study-card:hover {
+                    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+                    transform: translateY(-2px);
+                }
+                .export-btn:hover:not(:disabled) {
+                    background: #059669;
+                    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+                    transform: translateY(-1px);
+                }
+            `}</style>
         </div>
     );
 };
 
-// --- Main Page Component ---
+// --- Main Component ---
 
 const AssignedStudies = () => {
     const navigate = useNavigate();
@@ -439,7 +480,6 @@ const AssignedStudies = () => {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
-    const [error, setError] = useState(null);
 
     useEffect(() => {
         fetchAssignments();
@@ -454,29 +494,23 @@ const AssignedStudies = () => {
                     studyCode: code,
                     studyName: curr.study_name,
                     hasTimeline: curr.has_timeline,
-                    startDate: curr.start_date || curr.visit_date, // Use visit_date as fallback
+                    startDate: curr.start_date || curr.visit_date,
                     endDate: curr.end_date,
                     visitDates: [],
                     assignments: []
                 };
             }
-            // Collect all visit dates
             if (curr.visit_date) {
                 groups[code].visitDates.push(new Date(curr.visit_date));
             }
             groups[code].assignments.push(curr);
         });
 
-        // Calculate min and max dates from visit dates if no explicit start/end
         Object.values(groups).forEach(group => {
             if (group.visitDates.length > 0) {
-                const sortedDates = group.visitDates.sort((a, b) => a - b);
-                if (!group.startDate) {
-                    group.startDate = sortedDates[0].toISOString().split('T')[0];
-                }
-                if (!group.endDate) {
-                    group.endDate = sortedDates[sortedDates.length - 1].toISOString().split('T')[0];
-                }
+                const sorted = group.visitDates.sort((a, b) => a - b);
+                if (!group.startDate) group.startDate = sorted[0].toISOString().split('T')[0];
+                if (!group.endDate) group.endDate = sorted[sorted.length - 1].toISOString().split('T')[0];
             }
         });
 
@@ -489,8 +523,7 @@ const AssignedStudies = () => {
             const response = await api.get('/assigned-studies');
             setAssignments(response.data.data || []);
         } catch (err) {
-            console.error('Failed to fetch assignments:', err);
-            setError(err.response?.data?.detail || 'Failed to load assignments');
+            console.error('Failed to fetch:', err);
         } finally {
             setLoading(false);
         }
@@ -515,64 +548,64 @@ const AssignedStudies = () => {
     }, {});
 
     return (
-        <div className="animate-fade-in" style={{ maxWidth: '1600px', margin: '0 auto', padding: '2rem' }}>
-            {/* Page Header */}
+        <div style={{
+            minHeight: '100vh',
+            background: 'linear-gradient(180deg, #fafbfc 0%, #ffffff 100%)',
+            padding: '2rem 3rem'
+        }}>
+            {/* Header */}
             <div style={{ marginBottom: '2rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', gap: '1.5rem' }}>
                     <div>
                         <h1 style={{
-                            fontSize: '2rem',
+                            fontSize: '2.25rem',
                             fontWeight: '800',
-                            color: '#111827',
-                            marginBottom: '0.375rem',
-                            letterSpacing: '-0.025em'
+                            color: '#0f172a',
+                            marginBottom: '0.5rem',
+                            letterSpacing: '-0.025em',
+                            background: 'linear-gradient(135deg, #0f172a 0%, #475569 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent'
                         }}>
                             Assigned Studies
                         </h1>
-                        <p style={{ color: '#64748b', fontSize: '0.9375rem', fontWeight: '500' }}>
+                        <p style={{ color: '#64748b', fontSize: '0.9375rem', fontWeight: '500', margin: 0 }}>
                             Track and manage volunteer assignments
                         </p>
                     </div>
 
-                    {/* Search Bar */}
-                    <div style={{ position: 'relative', width: '380px' }}>
+                    {/* Search */}
+                    <div style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
                         <Search size={18} style={{
                             position: 'absolute',
                             left: '1rem',
                             top: '50%',
                             transform: 'translateY(-50%)',
-                            color: '#9ca3af'
+                            color: '#94a3b8'
                         }} />
                         <input
                             type="text"
-                            placeholder="Search by study code..."
+                            placeholder="Search studies..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                             style={{
                                 width: '100%',
-                                padding: '0.75rem 1rem 0.75rem 3rem',
-                                borderRadius: '10px',
-                                border: '1px solid #d1d5db',
+                                padding: '0.875rem 1rem 0.875rem 3rem',
+                                borderRadius: '12px',
+                                border: '1px solid #e2e8f0',
                                 fontSize: '0.875rem',
                                 fontWeight: '500',
                                 boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                                transition: 'all 0.15s',
-                                outline: 'none'
-                            }}
-                            onFocus={(e) => {
-                                e.target.style.borderColor = '#3b82f6';
-                                e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-                            }}
-                            onBlur={(e) => {
-                                e.target.style.borderColor = '#d1d5db';
-                                e.target.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+                                transition: 'all 0.2s',
+                                outline: 'none',
+                                background: 'white'
                             }}
                         />
                     </div>
                 </div>
 
-                {/* Status Filter Tabs */}
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {/* Filter Tabs */}
+                <div style={{ display: 'flex', gap: '0.625rem', flexWrap: 'wrap' }}>
                     {[
                         { key: 'all', label: 'All Studies', color: '#64748b' },
                         { key: 'ongoing', label: 'Ongoing', color: '#10b981' },
@@ -582,9 +615,10 @@ const AssignedStudies = () => {
                         <button
                             key={filter.key}
                             onClick={() => setStatusFilter(filter.key)}
+                            className="filter-tab"
                             style={{
                                 padding: '0.625rem 1.125rem',
-                                borderRadius: '8px',
+                                borderRadius: '10px',
                                 border: statusFilter === filter.key ? 'none' : '1px solid #e5e7eb',
                                 background: statusFilter === filter.key ? filter.color : 'white',
                                 color: statusFilter === filter.key ? 'white' : '#64748b',
@@ -594,30 +628,18 @@ const AssignedStudies = () => {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '0.5rem',
-                                transition: 'all 0.15s',
-                                boxShadow: statusFilter === filter.key ? `0 2px 8px ${filter.color}33` : 'none'
-                            }}
-                            onMouseEnter={(e) => {
-                                if (statusFilter !== filter.key) {
-                                    e.currentTarget.style.borderColor = filter.color;
-                                    e.currentTarget.style.color = filter.color;
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                if (statusFilter !== filter.key) {
-                                    e.currentTarget.style.borderColor = '#e5e7eb';
-                                    e.currentTarget.style.color = '#64748b';
-                                }
+                                transition: 'all 0.2s',
+                                boxShadow: statusFilter === filter.key ? `0 2px 8px ${filter.color}33` : '0 1px 2px rgba(0,0,0,0.04)'
                             }}
                         >
                             {filter.label}
                             <span style={{
                                 padding: '0.125rem 0.5rem',
-                                background: statusFilter === filter.key ? 'rgba(255,255,255,0.2)' : '#f3f4f6',
+                                background: statusFilter === filter.key ? 'rgba(255,255,255,0.25)' : '#f3f4f6',
                                 borderRadius: '10px',
-                                fontSize: '0.7rem',
+                                fontSize: '0.75rem',
                                 fontWeight: '700',
-                                minWidth: '1.25rem',
+                                minWidth: '1.5rem',
                                 textAlign: 'center'
                             }}>
                                 {statusCounts[filter.key] || 0}
@@ -629,59 +651,59 @@ const AssignedStudies = () => {
 
             {/* Content */}
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '4rem' }}>
+                <div style={{ textAlign: 'center', padding: '5rem' }}>
                     <div style={{
-                        width: '48px',
-                        height: '48px',
-                        border: '4px solid #f3f4f6',
-                        borderTop: '4px solid #3b82f6',
+                        width: '56px',
+                        height: '56px',
+                        border: '4px solid #f1f5f9',
+                        borderTop: '4px solid #6366f1',
                         borderRadius: '50%',
                         animation: 'spin 0.8s linear infinite',
                         margin: '0 auto'
                     }}></div>
-                    <p style={{ marginTop: '1.25rem', color: '#64748b', fontSize: '0.9375rem', fontWeight: '500' }}>
+                    <p style={{ marginTop: '1.5rem', color: '#64748b', fontSize: '0.9375rem', fontWeight: '600' }}>
                         Loading studies...
                     </p>
                 </div>
             ) : filteredStudies.length === 0 ? (
                 <div style={{
                     textAlign: 'center',
-                    padding: '5rem 0',
+                    padding: '5rem 2rem',
                     background: 'white',
-                    borderRadius: '12px',
-                    border: '1px dashed #cbd5e1'
+                    borderRadius: '16px',
+                    border: '2px dashed #e5e7eb'
                 }}>
-                    <Activity size={56} style={{ color: '#cbd5e1', marginBottom: '1.25rem' }} />
-                    <p style={{ color: '#64748b', fontWeight: '600', fontSize: '1.0625rem', marginBottom: '0.5rem' }}>
+                    <div style={{
+                        width: '80px',
+                        height: '80px',
+                        margin: '0 auto 1.5rem',
+                        borderRadius: '20px',
+                        background: '#f8fafc',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <Activity size={40} style={{ color: '#cbd5e1' }} />
+                    </div>
+                    <p style={{ color: '#475569', fontWeight: '700', fontSize: '1.125rem', marginBottom: '0.5rem' }}>
                         {search ? `No studies match "${search}"` :
-                            statusFilter !== 'all' ? `No ${statusFilter} studies found` :
+                            statusFilter !== 'all' ? `No ${statusFilter} studies` :
                                 'No study assignments found'}
                     </p>
                     {(search || statusFilter !== 'all') && (
                         <button
-                            onClick={() => {
-                                setSearch('');
-                                setStatusFilter('all');
-                            }}
+                            onClick={() => { setSearch(''); setStatusFilter('all'); }}
                             style={{
                                 marginTop: '1.25rem',
-                                padding: '0.625rem 1.25rem',
+                                padding: '0.75rem 1.5rem',
                                 background: 'white',
                                 border: '1px solid #d1d5db',
-                                borderRadius: '8px',
+                                borderRadius: '10px',
                                 color: '#64748b',
                                 cursor: 'pointer',
                                 fontWeight: '600',
-                                fontSize: '0.8125rem',
-                                transition: 'all 0.15s'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.borderColor = '#3b82f6';
-                                e.currentTarget.style.color = '#3b82f6';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.borderColor = '#d1d5db';
-                                e.currentTarget.style.color = '#64748b';
+                                fontSize: '0.875rem',
+                                transition: 'all 0.2s'
                             }}
                         >
                             Clear Filters
@@ -702,13 +724,22 @@ const AssignedStudies = () => {
             <style>{`
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
                 
-                /* Custom Scrollbar */
+                input:focus {
+                    border-color: #6366f1 !important;
+                    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+                }
+                
+                .filter-tab:hover {
+                    transform: translateY(-1px);
+                }
+                
+                /* Scrollbar */
                 div[style*="overflowY: auto"]::-webkit-scrollbar {
                     width: 8px;
                 }
                 
                 div[style*="overflowY: auto"]::-webkit-scrollbar-track {
-                    background: #f3f4f6;
+                    background: #f8fafc;
                     border-radius: 10px;
                 }
                 
@@ -718,7 +749,7 @@ const AssignedStudies = () => {
                 }
                 
                 div[style*="overflowY: auto"]::-webkit-scrollbar-thumb:hover {
-                    background: #9ca3af;
+                    background: #94a3b8;
                 }
             `}</style>
         </div>

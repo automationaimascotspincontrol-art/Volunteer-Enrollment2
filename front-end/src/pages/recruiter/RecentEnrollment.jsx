@@ -600,7 +600,7 @@ const RecentEnrollment = () => {
 
     return (
         <>
-            <div className="container animate-fade-in" style={{ paddingBottom: '4rem' }}>
+            <div className="container animate-fade-in" style={{ paddingBottom: '4rem', padding: '0 3rem 4rem 3rem', maxWidth: '100%' }}>
                 <div style={{ marginBottom: '2.5rem' }}>
                     <h1 style={{
                         fontSize: 'clamp(2rem, 5vw, 3rem)',
