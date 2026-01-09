@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/api';
-import { Search, FileDown, Calendar, Users, ArrowRight, Activity, Clock, Filter } from 'lucide-react';
+import { Search, FileDown, Calendar, Users, ArrowRight, Activity, Clock, Filter, Trash2 } from 'lucide-react';
 
 // --- Styled Components & Helpers ---
 
@@ -67,18 +67,9 @@ const getStudyStatusBadge = (status) => {
     }
 };
 
-const VolunteerCard = ({ vol, onStatusChange, onAttendanceToggle }) => {
+const VolunteerCard = ({ vol, onDelete }) => {
     const statusStyles = getStatusStyles(vol.status);
     const isWithdrawn = vol.status === 'withdrew';
-    const [isPresent, setIsPresent] = React.useState(vol.attendance_status === 'present');
-
-    const handleAttendanceToggle = async () => {
-        const newStatus = !isPresent;
-        setIsPresent(newStatus);
-        if (onAttendanceToggle) {
-            await onAttendanceToggle(vol._id, newStatus ? 'present' : 'absent');
-        }
-    };
 
     return (
         <div style={{
@@ -120,28 +111,6 @@ const VolunteerCard = ({ vol, onStatusChange, onAttendanceToggle }) => {
                 </div>
             </div>
 
-            {/* Attendance Toggle */}
-            {!isWithdrawn && (
-                <button
-                    onClick={handleAttendanceToggle}
-                    title={isPresent ? "Mark as Absent" : "Mark as Present"}
-                    style={{
-                        background: isPresent ? '#10b981' : '#f3f4f6',
-                        color: isPresent ? 'white' : '#6b7280',
-                        border: 'none',
-                        borderRadius: '6px',
-                        padding: '0.375rem 0.75rem',
-                        fontSize: '0.72rem',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s',
-                        flexShrink: 0
-                    }}
-                >
-                    {isPresent ? '✓ Present' : 'Absent'}
-                </button>
-            )}
-
             {/* Status Badge */}
             <div style={{
                 background: statusStyles.bg,
@@ -155,6 +124,35 @@ const VolunteerCard = ({ vol, onStatusChange, onAttendanceToggle }) => {
             }}>
                 {vol.status}
             </div>
+
+            {/* Delete Button */}
+            <button
+                onClick={() => onDelete && onDelete(vol._id)}
+                title="Remove volunteer from study"
+                style={{
+                    background: 'transparent',
+                    color: '#ef4444',
+                    border: '1px solid #fecaca',
+                    borderRadius: '6px',
+                    padding: '0.5rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.15s',
+                    flexShrink: 0
+                }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#fef2f2';
+                    e.currentTarget.style.borderColor = '#ef4444';
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.borderColor = '#fecaca';
+                }}
+            >
+                <Trash2 size={16} />
+            </button>
         </div>
     );
 };
@@ -164,20 +162,17 @@ const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
     const studyStatus = getStudyStatus(study);
     const statusBadge = getStudyStatusBadge(studyStatus);
 
-    const handleStatusChange = async (id, newStatus) => {
+    const handleVolunteerDelete = async (volunteerId) => {
+        if (!window.confirm('Are you sure you want to remove this volunteer from the study?')) {
+            return;
+        }
+
         try {
-            await api.patch(`/assigned-studies/${id}`, { status: newStatus });
+            await api.delete(`/assigned-studies/${volunteerId}`);
             onAssignmentUpdate();
         } catch (e) {
-            alert("Failed to update status");
-        }
-    };
-
-    const handleAttendanceToggle = async (id, attendanceStatus) => {
-        try {
-            console.log(`Toggle attendance for ${id}: ${attendanceStatus}`);
-        } catch (e) {
-            console.error("Failed to toggle attendance", e);
+            console.error('Failed to delete volunteer:', e);
+            alert("Failed to remove volunteer");
         }
     };
 
@@ -309,6 +304,39 @@ const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
                                 {statusBadge.label}
                             </div>
                         </div>
+
+                        {/* Timeline Dates Block */}
+                        {(study.startDate || study.endDate) && (
+                            <div style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                marginTop: '0.75rem',
+                                padding: '0.5rem 0.875rem',
+                                background: 'white',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '8px',
+                                fontSize: '0.75rem',
+                                fontWeight: '600',
+                                color: '#64748b',
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                            }}>
+                                <Calendar size={14} style={{ color: '#94a3b8' }} />
+                                {study.startDate && (
+                                    <span style={{ color: '#10b981' }}>
+                                        {new Date(study.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    </span>
+                                )}
+                                {study.startDate && study.endDate && (
+                                    <ArrowRight size={12} style={{ color: '#cbd5e1' }} />
+                                )}
+                                {study.endDate && (
+                                    <span style={{ color: '#f59e0b' }}>
+                                        {new Date(study.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    </span>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -390,8 +418,7 @@ const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
                                 <VolunteerCard
                                     key={vol._id}
                                     vol={vol}
-                                    onStatusChange={handleStatusChange}
-                                    onAttendanceToggle={handleAttendanceToggle}
+                                    onDelete={handleVolunteerDelete}
                                 />
                             ))}
                         </div>
@@ -427,13 +454,32 @@ const AssignedStudies = () => {
                     studyCode: code,
                     studyName: curr.study_name,
                     hasTimeline: curr.has_timeline,
-                    startDate: curr.start_date,
+                    startDate: curr.start_date || curr.visit_date, // Use visit_date as fallback
                     endDate: curr.end_date,
+                    visitDates: [],
                     assignments: []
                 };
             }
+            // Collect all visit dates
+            if (curr.visit_date) {
+                groups[code].visitDates.push(new Date(curr.visit_date));
+            }
             groups[code].assignments.push(curr);
         });
+
+        // Calculate min and max dates from visit dates if no explicit start/end
+        Object.values(groups).forEach(group => {
+            if (group.visitDates.length > 0) {
+                const sortedDates = group.visitDates.sort((a, b) => a - b);
+                if (!group.startDate) {
+                    group.startDate = sortedDates[0].toISOString().split('T')[0];
+                }
+                if (!group.endDate) {
+                    group.endDate = sortedDates[sortedDates.length - 1].toISOString().split('T')[0];
+                }
+            }
+        });
+
         setGroupedStudies(groups);
     }, [assignments]);
 
