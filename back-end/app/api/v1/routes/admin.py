@@ -9,6 +9,7 @@ from app.api.v1 import deps
 from app.core.permissions import Permission
 from app.services import user_service
 from app.repositories import audit_repo
+from app.db.mongodb import db
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -120,3 +121,100 @@ async def import_legacy_data(
         return {"success": True, "data": result}
     except Exception as e:
         raise HTTPException(500, f"Import failed: {str(e)}")
+
+# Dashboard Volunteers Endpoints
+@router.get("/dashboard/volunteers")
+async def get_dashboard_volunteers(
+    skip: int = 0,
+    limit: int = 20,
+    stage: str = None,
+    status: str = None,
+    gender: str = None,
+    search: str = None,
+    current_user: dict = Depends(deps.get_current_user),
+):
+    """
+    Get paginated volunteer list for the All Volunteers page.
+    Supports filtering by stage, status, gender, and search.
+    """
+    try:
+        volunteers_collection = db["volunteers_master"]
+        
+        # Build filter query
+        query = {}
+        
+        if stage:
+            query["stage"] = stage
+        if status:
+            query["status"] = status
+        if gender:
+            query[" pre_screening.gender"] = gender
+        if search:
+            query["$or"] = [
+                {"volunteer_id": {"$regex": search, "$options": "i"}},
+                {"subject_code": {"$regex": search, "$options": "i"}},
+                {"pre_screening.name": {"$regex": search, "$options": "i"}},
+            ]
+        
+        # Get total count
+        total = await volunteers_collection.count_documents(query)
+        
+        # Get paginated volunteers
+        volunteers = await volunteers_collection.find(query).skip(skip).limit(limit).sort("created_at", -1).to_list(length=limit)
+        
+        # Convert ObjectId to string for JSON serialization
+        for vol in volunteers:
+            vol["_id"] = str(vol["_id"])
+        
+        return {
+            "success": True,
+            "volunteers": volunteers,
+            "total": total
+        }
+    except Exception as e:
+        raise HTTPException(500, f"Failed to fetch volunteers: {str(e)}")
+
+
+@router.patch("/dashboard/volunteers/{volunteer_id}")
+async def update_volunteer_details(
+    volunteer_id: str,
+    update_data: dict,
+    current_user: dict = Depends(deps.get_current_user),
+):
+    """
+    Update volunteer details (name, contact, location, age, address).
+    """
+    try:
+        volunteers_collection = db["volunteers_master"]
+        
+        # Find volunteer
+        volunteer = await volunteers_collection.find_one({"volunteer_id": volunteer_id})
+        if not volunteer:
+            raise HTTPException(404, f"Volunteer {volunteer_id} not found")
+        
+        # Update only the pre_screening fields that were provided
+        if "pre_screening" in update_data:
+            update_fields = {}
+            allowed_fields = ["name", "contact", "location", "age", "address", "email"]
+            
+            for field, value in update_data["pre_screening"].items():
+                if field in allowed_fields:
+                    update_fields[f"pre_screening.{field}"] = value
+            
+            if update_fields:
+                result = await volunteers_collection.update_one(
+                    {"volunteer_id": volunteer_id},
+                    {"$set": update_fields}
+                )
+                
+                if result.modified_count > 0:
+                    return {"success": True, "message": "Volunteer updated successfully"}
+                else:
+                    return {"success": True, "message": "No changes made"}
+        
+        return {"success": False, "message": "No valid update data provided"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Failed to update volunteer: {str(e)}")
+
