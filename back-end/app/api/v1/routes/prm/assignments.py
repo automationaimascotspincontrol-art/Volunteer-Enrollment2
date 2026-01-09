@@ -123,6 +123,83 @@ async def export_assigned_studies(
     
     return StreamingResponse(output, headers=headers, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
+@router.get("/assigned-studies/export/{study_code}")
+async def export_study_specific(
+    study_code: str,
+    user: UserBase = Depends(get_current_user)
+):
+    """
+    Export a specific study's details with all assigned volunteers to Excel.
+    """
+    try:
+        # Get all assignments for this study
+        assignments = await AssignedStudy.find(
+            AssignedStudy.study_code == study_code
+        ).to_list()
+        
+        if not assignments:
+            raise HTTPException(status_code=404, detail=f"No volunteers found for study: {study_code}")
+        
+        # Prepare data for Excel
+        data = []
+        study_name = assignments[0].study_name if assignments else "Unknown"
+        
+        for a in assignments:
+            # Sanitize volunteer name
+            volunteer_name = a.volunteer_name or ""
+            if len(volunteer_name) > 1 and volunteer_name[0] == volunteer_name[1]:
+                volunteer_name = volunteer_name[1:]
+            
+            data.append({
+                "Study Code": a.study_code,
+                "Study Name": a.study_name,
+                "Volunteer ID": a.volunteer_id,
+                "Volunteer Name": volunteer_name,
+                "Contact": a.volunteer_contact or "N/A",
+                "Gender": a.volunteer_gender or "N/A",
+                "Visit Date": a.assignment_date.strftime("%Y-%m-%d") if a.assignment_date else "N/A",
+                "Status": a.fitness_status,
+                "Assigned By": a.assigned_by or "System"
+            })
+        
+        # Create Excel file
+        df = pd.DataFrame(data)
+        output = BytesIO()
+        
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df.to_excel(writer, index=False, sheet_name=study_code[:31])  # Sheet name max 31 chars
+            
+            # Get workbook and worksheet
+            workbook = writer.book
+            worksheet = writer.sheets[study_code[:31]]
+            
+            # Add formatting
+            header_format = workbook.add_format({
+                'bold': True,
+                'bg_color': '#10b981',
+                'font_color': 'white',
+                'border': 1
+            })
+            
+            # Apply header format
+            for col_num, value in enumerate(df.columns.values):
+                worksheet.write(0, col_num, value, header_format)
+                worksheet.set_column(col_num, col_num, 18)  # Set column width
+        
+        output.seek(0)
+        
+        headers = {
+            'Content-Disposition': f'attachment; filename="{study_code}_Volunteers_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+        }
+        
+        return StreamingResponse(output, headers=headers, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error exporting study {study_code}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
+
 @router.patch("/assigned-studies/{assignment_id}")
 async def update_assigned_study_status(
     assignment_id: str,

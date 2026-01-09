@@ -126,6 +126,8 @@ const VolunteerCard = ({ vol, onStatusChange, onAttendanceToggle }) => {
 };
 
 const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
+    const [exportingStudy, setExportingStudy] = React.useState(false);
+
     const handleStatusChange = async (id, newStatus) => {
         try {
             await api.patch(`/assigned-studies/${id}`, { status: newStatus });
@@ -141,6 +143,26 @@ const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
             console.log(`Toggle attendance for ${id}: ${attendanceStatus}`);
         } catch (e) {
             console.error("Failed to toggle attendance", e);
+        }
+    };
+
+    const handleStudyExport = async () => {
+        try {
+            setExportingStudy(true);
+            const response = await api.get(`/assigned-studies/export/${study.studyCode}`, { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `${study.studyCode}_Volunteers_${new Date().toISOString().split('T')[0]}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (e) {
+            console.error('Export failed:', e);
+            alert("Download failed");
+        } finally {
+            setExportingStudy(false);
         }
     };
 
@@ -167,10 +189,28 @@ const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
                         {study.studyCode}
                     </div>
                     <div>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#111827', letterSpacing: '-0.5px' }}>
-                            {study.studyName}
-                        </h2>
-                        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#111827', letterSpacing: '-0.5px', marginBottom: 0 }}>
+                                {study.studyName}
+                            </h2>
+                            {/* Timeline Block */}
+                            <div style={{
+                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                color: 'white',
+                                padding: '0.4rem 0.9rem',
+                                borderRadius: '8px',
+                                fontSize: '0.8rem',
+                                fontWeight: '700',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.4rem',
+                                boxShadow: '0 2px 6px rgba(16, 185, 129, 0.25)'
+                            }}>
+                                <Clock size={14} />
+                                T0, T1, T2
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: '#6b7280', marginTop: '0.5rem' }}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                                 <Users size={14} /> {assignments.length} Total Volunteers
                             </span>
@@ -180,6 +220,45 @@ const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
                         </div>
                     </div>
                 </div>
+
+                {/* Export Button */}
+                <button
+                    onClick={handleStudyExport}
+                    disabled={exportingStudy}
+                    title="Export this study's data with all volunteers"
+                    style={{
+                        background: exportingStudy ? '#9ca3af' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.75rem 1.25rem',
+                        borderRadius: '10px',
+                        fontWeight: '700',
+                        fontSize: '0.9rem',
+                        cursor: exportingStudy ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        transition: 'all 0.2s',
+                        boxShadow: exportingStudy ? 'none' : '0 4px 12px rgba(16, 185, 129, 0.3)',
+                        transform: exportingStudy ? 'none' : 'translateY(0)',
+                        whiteSpace: 'nowrap'
+                    }}
+                    onMouseEnter={(e) => {
+                        if (!exportingStudy) {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)';
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (!exportingStudy) {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                        }
+                    }}
+                >
+                    <FileDown size={18} />
+                    {exportingStudy ? 'Exporting...' : 'Export Excel'}
+                </button>
             </div>
 
             {/* Volunteers List */}
