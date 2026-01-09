@@ -1,2 +1,0 @@
-STAGES: ['pre_screening', 'registered']
-STATUSES: ['active-new', 'active-old', 'approved', 'inactive', 'rejected', 'submitted']

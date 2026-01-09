@@ -1,6 +1,0 @@
-{'stage': 'registered', 'status': 'rejected'}: 7
-{'stage': 'registered', 'status': 'approved'}: 13
-{'stage': 'registered', 'status': 'inactive'}: 9343
-{'stage': 'registered', 'status': 'active-old'}: 2278
-{'stage': 'pre_screening', 'status': 'submitted'}: 3
-{'stage': 'registered', 'status': 'active-new'}: 2967
