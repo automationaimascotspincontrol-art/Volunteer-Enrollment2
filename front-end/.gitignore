@@ -19,7 +19,7 @@ dist-ssr
 .DS_Store
 *.suo
 *.ntvs*
-*.njsproj
+*.njsproj*
 *.sln
 *.sw?
 
@@ -27,3 +27,17 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+
+# Build analysis
+stats.html
+bundle-report.html
+
+# Source maps in production
+*.map
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Environment files
+.env.production.local

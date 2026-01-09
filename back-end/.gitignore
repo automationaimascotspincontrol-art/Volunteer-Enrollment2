@@ -28,3 +28,56 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+
+# Development Scripts (moved to scripts/ directory)
+# Keep these patterns to prevent re-adding to root
+/test_*.py
+/*_test.py
+/debug_*.py
+/check_*.py
+/analyze_*.py
+/investigate_*.py
+/diagnostic_*.py
+/verify_*.py
+/dump_*.py
+/temp_*.py
+/raw_*.py
+/list_*.py
+/fix_*.py
+/create_*.py
+/delete_*.py
+/seed_*.py
+/migrate_*.py
+/read_excel.py
+
+# Documentation (moved to docs/)
+/*.txt
+/ARCHITECTURE.md
+/CODE_REVIEW.md
+/DATABASE_STRUCTURE.md
+/IMPLEMENTATION_*.md
+/NEXT_STEPS.md
+/SYSTEM_FLOW.md
+/*_FIXES.md
+/*_SUMMARY.md
+/*_COMPLETE.md
+/*_SOLUTION.md
+
+# Output and temporary files
+output.txt
+results.txt
+stages.txt
+breakdown.txt
+*.log
+
+# Data files (should not be committed)
+/*.json
+!package.json
+!package-lock.json
+/*.xlsx
+/*.xls
+/*.csv
+
+# HTML previews
+/*.html
+!index.html
