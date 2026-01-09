@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api/api';
-import { Users, CheckCircle, Clock, Calendar, X, ArrowRight, Phone, MapPin, User, Cake, Briefcase, AlertCircle } from 'lucide-react';
+import { Users, CheckCircle, Clock, Calendar, X, ArrowRight, Phone, MapPin, User, Cake, Briefcase, AlertCircle, Search } from 'lucide-react';
 
 const RecentEnrollment = () => {
     const [data, setData] = useState({ prescreening: [], approved: [] });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [selectedVolunteer, setSelectedVolunteer] = useState(null);
+    const [prescreeningSearch, setPrescreeningSearch] = useState('');
+    const [approvedSearch, setApprovedSearch] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -37,43 +39,118 @@ const RecentEnrollment = () => {
 
     const VolunteerCard = ({ volunteer, status }) => (
         <div className="glass-card" style={{
-            padding: '1rem',
+            padding: '1.25rem',
             marginBottom: '1rem',
-            borderLeft: `4px solid ${status === 'approved' ? 'var(--success)' : 'var(--accent)'}`,
-            transition: 'all 0.3s ease'
-        }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+            borderLeft: `4px solid ${status === 'approved' ? '#10b981' : '#f59e0b'}`,
+            transition: 'all 0.3s ease',
+            cursor: 'pointer',
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.08)',
+            position: 'relative',
+            overflow: 'hidden'
+        }}
+            onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.12)';
+            }}
+            onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.08)';
+            }}
+        >
+            {/* Status Badge */}
+            <div style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                padding: '0.35rem 0.75rem',
+                borderRadius: '20px',
+                fontSize: '0.7rem',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                background: status === 'approved' ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #f59e0b, #d97706)',
+                color: 'white',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+            }}>
+                {status === 'approved' ? '✓ Approved' : '⏱ Pending'}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', paddingRight: '6rem' }}>
                 <div style={{ flex: 1 }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+                    <h3 style={{
+                        fontSize: '1.2rem',
+                        fontWeight: '700',
+                        marginBottom: '0.75rem',
+                        color: '#1e293b',
+                        letterSpacing: '-0.5px'
+                    }}>
                         {volunteer.basic_info?.name || 'N/A'}
                     </h3>
-                    <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                        <span><strong>ID:</strong> {volunteer.volunteer_id}</span>
-                        <span><strong>Contact:</strong> {volunteer.contact || volunteer.basic_info?.contact}</span>
-                        <span><strong>Gender:</strong> {volunteer.basic_info?.gender}</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem', fontSize: '0.85rem', color: '#64748b', marginBottom: '0.75rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <User size={14} style={{ color: '#667eea' }} />
+                            <span><strong style={{ color: '#334155' }}>ID:</strong> {volunteer.volunteer_id}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <Phone size={14} style={{ color: '#10b981' }} />
+                            <span><strong style={{ color: '#334155' }}>Contact:</strong> {volunteer.contact || volunteer.basic_info?.contact}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <Users size={14} style={{ color: '#ec4899' }} />
+                            <span><strong style={{ color: '#334155' }}>Gender:</strong> {volunteer.basic_info?.gender}</span>
+                        </div>
                     </div>
-                    <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        <Calendar size={14} style={{ display: 'inline', marginRight: '0.3rem' }} />
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        fontSize: '0.8rem',
+                        color: '#94a3b8',
+                        padding: '0.5rem 0.75rem',
+                        background: 'rgba(99, 102, 241, 0.05)',
+                        borderRadius: '8px',
+                        width: 'fit-content'
+                    }}>
+                        <Calendar size={14} style={{ color: '#667eea' }} />
                         Enrolled: {formatDate(volunteer.audit?.created_at)}
                     </div>
                 </div>
-                <button
-                    onClick={() => setSelectedVolunteer(volunteer)}
-                    style={{
-                        padding: '0.5rem 1rem',
-                        background: 'var(--primary)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                    }}
-                >
-                    View Details
-                </button>
             </div>
+
+            <button
+                onClick={() => setSelectedVolunteer(volunteer)}
+                style={{
+                    position: 'absolute',
+                    bottom: '1.25rem',
+                    right: '1.25rem',
+                    padding: '0.65rem 1.25rem',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '10px',
+                    fontSize: '0.85rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.boxShadow = '0 6px 18px rgba(102, 126, 234, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                }}
+            >
+                View Details
+                <ArrowRight size={16} />
+            </button>
         </div>
     );
 
@@ -192,9 +269,30 @@ const RecentEnrollment = () => {
                             }}>
                                 <User size={20} color="white" />
                             </div>
-                            <div>
+                            <div style={{ flex: 1 }}>
                                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>Volunteer ID</p>
                                 <p style={{ fontSize: '1rem', fontWeight: '600' }}>{volunteer.volunteer_id}</p>
+                                {volunteer.legacy_id && (
+                                    <p style={{
+                                        fontSize: '0.85rem',
+                                        color: '#f59e0b',
+                                        marginTop: '0.4rem',
+                                        fontWeight: '600',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.4rem'
+                                    }}>
+                                        <span style={{
+                                            padding: '0.2rem 0.5rem',
+                                            background: 'rgba(245, 158, 11, 0.1)',
+                                            borderRadius: '6px',
+                                            fontSize: '0.75rem',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.5px'
+                                        }}>Legacy</span>
+                                        {volunteer.legacy_id}
+                                    </p>
+                                )}
                             </div>
                         </div>
 
@@ -529,32 +627,117 @@ const RecentEnrollment = () => {
                             alignItems: 'center',
                             gap: '0.8rem',
                             marginBottom: '1.5rem',
-                            padding: '1rem',
-                            background: 'rgba(255, 171, 0, 0.1)',
-                            borderRadius: '12px',
-                            border: '1px solid rgba(255, 171, 0, 0.2)'
+                            padding: '1.25rem',
+                            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(251, 191, 36, 0.1) 100%)',
+                            borderRadius: '16px',
+                            border: '2px solid rgba(245, 158, 11, 0.2)',
+                            boxShadow: '0 4px 15px rgba(245, 158, 11, 0.1)'
                         }}>
-                            <div style={{ padding: '0.6rem', background: 'var(--accent)', borderRadius: '10px' }}>
-                                <Clock color="white" size={24} />
+                            <div style={{
+                                padding: '0.75rem',
+                                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                                borderRadius: '12px',
+                                boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
+                            }}>
+                                <Clock color="white" size={28} />
                             </div>
-                            <div>
-                                <h2 style={{ fontSize: '1.3rem', fontWeight: '700', marginBottom: '0.2rem' }}>
+                            <div style={{ flex: 1 }}>
+                                <h2 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '0.3rem', color: '#1e293b', letterSpacing: '-0.5px' }}>
                                     Pre-screening
                                 </h2>
-                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                    {data.prescreening.length} pending approval
+                                <p style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '600' }}>
+                                    {data.prescreening.filter(v =>
+                                        !prescreeningSearch ||
+                                        v.basic_info?.name?.toLowerCase().includes(prescreeningSearch.toLowerCase()) ||
+                                        v.volunteer_id?.toLowerCase().includes(prescreeningSearch.toLowerCase()) ||
+                                        v.contact?.includes(prescreeningSearch)
+                                    ).length} pending approval
                                 </p>
                             </div>
                         </div>
 
-                        {data.prescreening.length === 0 ? (
-                            <div className="glass-card" style={{ padding: '2rem', textAlign: 'center' }}>
-                                <Users size={48} color="var(--text-muted)" style={{ marginBottom: '1rem' }} />
-                                <p style={{ color: 'var(--text-muted)' }}>No pre-screening volunteers</p>
+                        {/* Search Bar for Pre-screening */}
+                        <div style={{
+                            position: 'relative',
+                            marginBottom: '1.5rem',
+                            animation: 'fadeIn 0.3s ease-in'
+                        }}>
+                            <Search
+                                size={18}
+                                style={{
+                                    position: 'absolute',
+                                    left: '1rem',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    color: '#94a3b8',
+                                    zIndex: 1
+                                }}
+                            />
+                            <input
+                                type="text"
+                                placeholder="Search by name, ID, or contact..."
+                                value={prescreeningSearch}
+                                onChange={(e) => setPrescreeningSearch(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.85rem 1rem 0.85rem 3rem',
+                                    border: '2px solid #e2e8f0',
+                                    borderRadius: '12px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '500',
+                                    background: 'white',
+                                    transition: 'all 0.2s',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                                }}
+                                onFocus={(e) => {
+                                    e.target.style.borderColor = '#f59e0b';
+                                    e.target.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.15)';
+                                }}
+                                onBlur={(e) => {
+                                    e.target.style.borderColor = '#e2e8f0';
+                                    e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
+                                }}
+                            />
+                        </div>
+
+                        {data.prescreening.filter(v =>
+                            !prescreeningSearch ||
+                            v.basic_info?.name?.toLowerCase().includes(prescreeningSearch.toLowerCase()) ||
+                            v.volunteer_id?.toLowerCase().includes(prescreeningSearch.toLowerCase()) ||
+                            v.contact?.includes(prescreeningSearch)
+                        ).length === 0 ? (
+                            <div className="glass-card" style={{ padding: '3rem 2rem', textAlign: 'center', background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)' }}>
+                                <Users size={56} color="#cbd5e1" style={{ marginBottom: '1rem' }} />
+                                <p style={{ color: '#64748b', fontSize: '1rem', fontWeight: '600' }}>
+                                    {prescreeningSearch ? 'No matching volunteers found' : 'No pre-screening volunteers'}
+                                </p>
+                                {prescreeningSearch && (
+                                    <button
+                                        onClick={() => setPrescreeningSearch('')}
+                                        style={{
+                                            marginTop: '1rem',
+                                            padding: '0.5rem 1rem',
+                                            background: 'transparent',
+                                            border: '2px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            color: '#64748b',
+                                            cursor: 'pointer',
+                                            fontWeight: '600',
+                                            fontSize: '0.85rem'
+                                        }}
+                                    >
+                                        Clear Search
+                                    </button>
+                                )}
                             </div>
                         ) : (
-                            <div style={{ maxHeight: '500px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-                                {data.prescreening.map((volunteer) => (
+                            <div style={{ maxHeight: '600px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                                {data.prescreening.filter(v =>
+                                    !prescreeningSearch ||
+                                    v.basic_info?.name?.toLowerCase().includes(prescreeningSearch.toLowerCase()) ||
+                                    v.volunteer_id?.toLowerCase().includes(prescreeningSearch.toLowerCase()) ||
+                                    v.contact?.includes(prescreeningSearch)
+                                ).map((volunteer) => (
                                     <VolunteerCard key={volunteer.volunteer_id} volunteer={volunteer} status="prescreening" />
                                 ))}
                             </div>
@@ -568,32 +751,117 @@ const RecentEnrollment = () => {
                             alignItems: 'center',
                             gap: '0.8rem',
                             marginBottom: '1.5rem',
-                            padding: '1rem',
-                            background: 'rgba(34, 197, 94, 0.1)',
-                            borderRadius: '12px',
-                            border: '1px solid rgba(34, 197, 94, 0.2)'
+                            padding: '1.25rem',
+                            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.1) 100%)',
+                            borderRadius: '16px',
+                            border: '2px solid rgba(16, 185, 129, 0.2)',
+                            boxShadow: '0 4px 15px rgba(16, 185, 129, 0.1)'
                         }}>
-                            <div style={{ padding: '0.6rem', background: 'var(--success)', borderRadius: '10px' }}>
-                                <CheckCircle color="white" size={24} />
+                            <div style={{
+                                padding: '0.75rem',
+                                background: 'linear-gradient(135deg, #10b981, #059669)',
+                                borderRadius: '12px',
+                                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                            }}>
+                                <CheckCircle color="white" size={28} />
                             </div>
-                            <div>
-                                <h2 style={{ fontSize: '1.3rem', fontWeight: '700', marginBottom: '0.2rem' }}>
+                            <div style={{ flex: 1 }}>
+                                <h2 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '0.3rem', color: '#1e293b', letterSpacing: '-0.5px' }}>
                                     Approved
                                 </h2>
-                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                    {data.approved.length} recently approved
+                                <p style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '600' }}>
+                                    {data.approved.filter(v =>
+                                        !approvedSearch ||
+                                        v.basic_info?.name?.toLowerCase().includes(approvedSearch.toLowerCase()) ||
+                                        v.volunteer_id?.toLowerCase().includes(approvedSearch.toLowerCase()) ||
+                                        v.contact?.includes(approvedSearch)
+                                    ).length} recently approved
                                 </p>
                             </div>
                         </div>
 
-                        {data.approved.length === 0 ? (
-                            <div className="glass-card" style={{ padding: '2rem', textAlign: 'center' }}>
-                                <CheckCircle size={48} color="var(--text-muted)" style={{ marginBottom: '1rem' }} />
-                                <p style={{ color: 'var(--text-muted)' }}>No approved volunteers yet</p>
+                        {/* Search Bar for Approved */}
+                        <div style={{
+                            position: 'relative',
+                            marginBottom: '1.5rem',
+                            animation: 'fadeIn 0.3s ease-in'
+                        }}>
+                            <Search
+                                size={18}
+                                style={{
+                                    position: 'absolute',
+                                    left: '1rem',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    color: '#94a3b8',
+                                    zIndex: 1
+                                }}
+                            />
+                            <input
+                                type="text"
+                                placeholder="Search by name, ID, or contact..."
+                                value={approvedSearch}
+                                onChange={(e) => setApprovedSearch(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.85rem 1rem 0.85rem 3rem',
+                                    border: '2px solid #e2e8f0',
+                                    borderRadius: '12px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '500',
+                                    background: 'white',
+                                    transition: 'all 0.2s',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                                }}
+                                onFocus={(e) => {
+                                    e.target.style.borderColor = '#10b981';
+                                    e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.15)';
+                                }}
+                                onBlur={(e) => {
+                                    e.target.style.borderColor = '#e2e8f0';
+                                    e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
+                                }}
+                            />
+                        </div>
+
+                        {data.approved.filter(v =>
+                            !approvedSearch ||
+                            v.basic_info?.name?.toLowerCase().includes(approvedSearch.toLowerCase()) ||
+                            v.volunteer_id?.toLowerCase().includes(approvedSearch.toLowerCase()) ||
+                            v.contact?.includes(approvedSearch)
+                        ).length === 0 ? (
+                            <div className="glass-card" style={{ padding: '3rem 2rem', textAlign: 'center', background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)' }}>
+                                <CheckCircle size={56} color="#cbd5e1" style={{ marginBottom: '1rem' }} />
+                                <p style={{ color: '#64748b', fontSize: '1rem', fontWeight: '600' }}>
+                                    {approvedSearch ? 'No matching volunteers found' : 'No approved volunteers yet'}
+                                </p>
+                                {approvedSearch && (
+                                    <button
+                                        onClick={() => setApprovedSearch('')}
+                                        style={{
+                                            marginTop: '1rem',
+                                            padding: '0.5rem 1rem',
+                                            background: 'transparent',
+                                            border: '2px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            color: '#64748b',
+                                            cursor: 'pointer',
+                                            fontWeight: '600',
+                                            fontSize: '0.85rem'
+                                        }}
+                                    >
+                                        Clear Search
+                                    </button>
+                                )}
                             </div>
                         ) : (
-                            <div style={{ maxHeight: '500px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-                                {data.approved.map((volunteer) => (
+                            <div style={{ maxHeight: '600px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                                {data.approved.filter(v =>
+                                    !approvedSearch ||
+                                    v.basic_info?.name?.toLowerCase().includes(approvedSearch.toLowerCase()) ||
+                                    v.volunteer_id?.toLowerCase().includes(approvedSearch.toLowerCase()) ||
+                                    v.contact?.includes(approvedSearch)
+                                ).map((volunteer) => (
                                     <VolunteerCard key={volunteer.volunteer_id} volunteer={volunteer} status="approved" />
                                 ))}
                             </div>
