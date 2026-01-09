@@ -22,8 +22,10 @@ from app.db import init_db
 from app.db.client import close_db
 from app.api.v1.routes import (
     auth, field, enrollment, clinical, admin, vboard, 
-    search, registration, prescreening, users, prm, attendance, volunteers
+    search, registration, prescreening, users, attendance, volunteers
 )
+# Import PRM module (refactored into sub-modules)
+from app.api.v1.routes.prm import router as prm_router
 
 
 # ============ Lifespan Management ============
@@ -103,7 +105,7 @@ app.include_router(registration.router, prefix="/api/v1/registration")
 app.include_router(search.router, prefix="/api/v1/volunteers")
 app.include_router(prescreening.router, prefix="/api/v1/prescreening")
 app.include_router(users.router, prefix="/api/v1/users")
-app.include_router(prm.router, prefix="/api/v1")
+app.include_router(prm_router, prefix="/api/v1", tags=["PRM"])  # Modular PRM router
 app.include_router(attendance.router, prefix="/api/v1/prm/attendance", tags=["Attendance"])
 app.include_router(volunteers.router, prefix="/api/v1")
 
