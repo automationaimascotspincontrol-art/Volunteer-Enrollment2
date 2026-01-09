@@ -306,7 +306,7 @@ const AssignedStudies = () => {
 
     useEffect(() => {
         fetchAssignments();
-    }, [token, search]);
+    }, [token]);
 
     useEffect(() => {
         // Group assignments by Study Code
@@ -389,30 +389,19 @@ const AssignedStudies = () => {
                     </h1>
                     <p style={{ color: '#64748b', fontSize: '1.1rem', marginTop: '0.5rem' }}>Track and manage volunteer assignments</p>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                    <div style={{ position: 'relative' }}>
-                        <Search size={20} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                        <input
-                            type="text"
-                            placeholder="Search volunteers..."
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            style={{
-                                padding: '0.8rem 1rem 0.8rem 3rem', borderRadius: '12px', border: '1px solid #cbd5e1',
-                                fontSize: '0.95rem', minWidth: '300px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                            }}
-                        />
-                    </div>
-                    <button
-                        onClick={handleDownload}
-                        disabled={downloading}
+                <div style={{ position: 'relative', minWidth: '400px' }}>
+                    <Search size={20} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                    <input
+                        type="text"
+                        placeholder="Search by Study Code..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
                         style={{
-                            background: '#0f172a', color: 'white', border: 'none', padding: '0.8rem 1.5rem',
-                            borderRadius: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem'
+                            width: '100%',
+                            padding: '0.8rem 1rem 0.8rem 3rem', borderRadius: '12px', border: '1px solid #cbd5e1',
+                            fontSize: '0.95rem', boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                         }}
-                    >
-                        <FileDown size={18} /> Export
-                    </button>
+                    />
                 </div>
             </div>
 
@@ -421,21 +410,51 @@ const AssignedStudies = () => {
                     <div style={{ width: '40px', height: '40px', border: '3px solid #f3f4f6', borderTop: '3px solid #4f46e5', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }}></div>
                     <p style={{ marginTop: '1rem', color: '#64748b' }}>Refreshing data...</p>
                 </div>
-            ) : Object.keys(groupedStudies).length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '6rem 0', background: 'white', borderRadius: '20px', border: '1px dashed #cbd5e1' }}>
-                    <Activity size={48} style={{ color: '#cbd5e1', marginBottom: '1rem' }} />
-                    <p style={{ color: '#64748b', fontWeight: '600' }}>No active study assignments found</p>
-                </div>
-            ) : (
-                Object.values(groupedStudies).map(study => (
+            ) : (() => {
+                // Filter studies by study code or study name
+                const filteredStudies = Object.values(groupedStudies).filter(study =>
+                    !search ||
+                    study.studyCode.toLowerCase().includes(search.toLowerCase()) ||
+                    study.studyName.toLowerCase().includes(search.toLowerCase())
+                );
+
+                if (filteredStudies.length === 0) {
+                    return (
+                        <div style={{ textAlign: 'center', padding: '6rem 0', background: 'white', borderRadius: '20px', border: '1px dashed #cbd5e1' }}>
+                            <Activity size={48} style={{ color: '#cbd5e1', marginBottom: '1rem' }} />
+                            <p style={{ color: '#64748b', fontWeight: '600' }}>
+                                {search ? `No studies match "${search}"` : 'No active study assignments found'}
+                            </p>
+                            {search && (
+                                <button
+                                    onClick={() => setSearch('')}
+                                    style={{
+                                        marginTop: '1rem',
+                                        padding: '0.6rem 1.2rem',
+                                        background: 'transparent',
+                                        border: '2px solid #cbd5e1',
+                                        borderRadius: '8px',
+                                        color: '#64748b',
+                                        cursor: 'pointer',
+                                        fontWeight: '600'
+                                    }}
+                                >
+                                    Clear Search
+                                </button>
+                            )}
+                        </div>
+                    );
+                }
+
+                return filteredStudies.map(study => (
                     <StudyCard
                         key={study.studyCode}
                         study={study}
                         assignments={study.assignments}
                         onAssignmentUpdate={fetchAssignments}
                     />
-                ))
-            )}
+                ));
+            })()}
 
             <style>{`
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
