@@ -10,20 +10,62 @@ import {
 import { Card, Button } from '../../components/ui';
 import '../../styles/SBoard.css';
 
-// Reusing global .stat-card class
-const StatCard = ({ title, value, icon: Icon, colorVar }) => (
-    <div className="stat-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.8rem' }}>
-            <div>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.3rem' }}>{title}</p>
-                <h3 style={{ fontSize: '2rem', fontWeight: '700', color: `var(${colorVar})` }}>{value}</h3>
+// Premium StatCard matching VBoard aesthetic
+const StatCard = ({ title, value, icon: Icon, colorVar }) => {
+    const colorMap = {
+        '--primary': { gradient: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', shadow: 'rgba(99, 102, 241, 0.3)', iconBg: 'rgba(99, 102, 241, 0.15)' },
+        '--accent': { gradient: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)', shadow: 'rgba(245, 158, 11, 0.3)', iconBg: 'rgba(245, 158, 11, 0.15)' },
+        '--secondary': { gradient: 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)', shadow: 'rgba(236, 72, 153, 0.3)', iconBg: 'rgba(236, 72, 153, 0.15)' },
+        '--success': { gradient: 'linear-gradient(135deg, #10b981 0%, #14b8a6 100%)', shadow: 'rgba(16, 185, 129, 0.3)', iconBg: 'rgba(16, 185, 129, 0.15)' },
+        '--chart-purple': { gradient: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)', shadow: 'rgba(139, 92, 246, 0.3)', iconBg: 'rgba(139, 92, 246, 0.15)' },
+        '--chart-blue': { gradient: 'linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)', shadow: 'rgba(59, 130, 246, 0.3)', iconBg: 'rgba(59, 130, 246, 0.15)' }
+    };
+
+    const colors = colorMap[colorVar] || colorMap['--primary'];
+
+    return (
+        <div style={{
+            padding: '0',
+            background: colors.gradient,
+            border: 'none',
+            borderRadius: '16px',
+            boxShadow: `0 4px 15px ${colors.shadow}`,
+            transition: 'all 0.3s ease',
+            cursor: 'default',
+            position: 'relative',
+            overflow: 'hidden'
+        }}
+            onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = `0 8px 25px ${colors.shadow}`;
+            }}
+            onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = `0 4px 15px ${colors.shadow}`;
+            }}>
+            <div style={{ position: 'absolute', top: '-30px', right: '-30px', opacity: 0.1 }}>
+                <Icon size={120} color="white" />
             </div>
-            <div style={{ padding: '0.8rem', background: `rgba(var(${colorVar}-rgb), 0.1)`, borderRadius: '12px' }}>
-                <Icon color={`var(${colorVar})`} size={24} />
+            <div style={{ padding: '1.8rem 1.5rem', position: 'relative', zIndex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <div style={{ flex: 1 }}>
+                        <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</p>
+                        <h3 style={{ fontSize: '2.5rem', fontWeight: '900', color: 'white', margin: 0, lineHeight: 1 }}>{value?.toLocaleString() || 0}</h3>
+                    </div>
+                    <div style={{
+                        padding: '0.9rem',
+                        background: 'rgba(255, 255, 255, 0.2)',
+                        borderRadius: '14px',
+                        backdropFilter: 'blur(10px)',
+                        flexShrink: 0
+                    }}>
+                        <Icon color="white" size={28} />
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 const SBoard = () => {
     const { id } = useParams(); // Start with Study ID if provided
@@ -295,30 +337,70 @@ const SBoard = () => {
     return (
         <div className="s-board animate-fade-in">
 
-            <div className="dashboard-header">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
-                    <h1 className="dashboard-title">
+                    <h1 style={{
+                        fontSize: 'clamp(1.8rem, 6vw, 2.8rem)',
+                        fontWeight: '950',
+                        marginBottom: '0.2rem',
+                        background: 'linear-gradient(135deg, #6366f1 0%, #ec4899 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        letterSpacing: '-1.5px'
+                    }}>
                         PRM Dashboard
                     </h1>
-                    <p className="dashboard-subtitle">Clinical Study Overview & Analytics</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>Clinical Study Overview & Analytics</p>
                 </div>
-                <div className="sboard-header-controls">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                     <button
                         onClick={() => navigate('/prm/calendar')}
-                        className="btn btn-primary"
+                        style={{
+                            padding: '0.9rem 1.5rem',
+                            background: 'linear-gradient(to right, #6366f1, #8b5cf6)',
+                            border: 'none',
+                            borderRadius: '12px',
+                            color: 'white',
+                            fontSize: '0.95rem',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)',
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 6px 20px rgba(99, 102, 241, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(99, 102, 241, 0.3)';
+                        }}
                     >
                         <Calendar size={18} />
-                        <span>Calendar</span>
+                        Calendar
                     </button>
-                    <div className="last-updated">
-                        <span className="text-muted">Last updated: </span>
-                        <span className="text-accent font-weight-600">{new Date().toLocaleTimeString()}</span>
+                    <div style={{ padding: '0.8rem 1.2rem', borderRadius: '14px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', fontSize: '0.85rem' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>Last updated: </span>
+                        <span style={{ color: 'var(--accent)', fontWeight: '600' }}>{new Date().toLocaleTimeString()}</span>
                     </div>
                 </div>
             </div>
 
             {/* Search Bar */}
-            <form onSubmit={handleSearch} className="search-container">
+            <form onSubmit={handleSearch} style={{
+                marginBottom: '2rem',
+                padding: '1.5rem',
+                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)',
+                border: '1px solid rgba(99, 102, 241, 0.2)',
+                borderRadius: '16px',
+                display: 'flex',
+                gap: '1rem',
+                alignItems: 'center',
+                flexWrap: 'wrap'
+            }}>
                 <div className="search-type-toggle">
                     <button
                         type="button"
@@ -352,75 +434,106 @@ const SBoard = () => {
 
             {/* Search Results */}
             {searchResults && (
-                <div className="glass-card mb-8">
-                    <div className="results-header">
-                        <h3 className="chart-title">Search Results</h3>
-                        <span className="results-count">{searchResults.length} matches found</span>
+                <div style={{
+                    marginBottom: '2rem',
+                    padding: '0',
+                    overflow: 'hidden',
+                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(20, 184, 166, 0.05) 100%)',
+                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                    borderRadius: '16px'
+                }}>
+                    <div style={{
+                        padding: '2rem 2rem 1.5rem',
+                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(20, 184, 166, 0.1) 100%)',
+                        borderBottom: '1px solid rgba(16, 185, 129, 0.2)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <div style={{
+                                    width: '50px',
+                                    height: '50px',
+                                    borderRadius: '14px',
+                                    background: 'linear-gradient(135deg, #10b981, #14b8a6)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)'
+                                }}>
+                                    <Database size={26} color="white" />
+                                </div>
+                                <div>
+                                    <h3 style={{ fontSize: '1.4rem', fontWeight: '800', margin: 0, marginBottom: '0.3rem' }}>Search Results</h3>
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>{searchResults.length} matches found</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="table-container">
-                        <table className="custom-table">
-                            <thead>
-                                <tr>
-                                    {searchType === 'study' ? (
-                                        <>
-                                            <th>Code</th>
-                                            <th>Name</th>
-                                            <th>Status</th>
-                                            <th>Start Date</th>
-                                            <th>Volunteers</th>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <th>Name</th>
-                                            <th>Email</th>
-                                            <th>Phone</th>
-                                            <th>History</th>
-                                        </>
-                                    )}
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {searchResults.map((item, idx) => (
-                                    <tr key={idx} className="animate-slide-up">
+                    <div style={{ padding: '2rem' }}>
+                        <div style={{ maxHeight: '500px', overflow: 'auto' }}>
+                            <table style={{ width: '100%', minWidth: '800px', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                <thead>
+                                    <tr>
                                         {searchType === 'study' ? (
                                             <>
-                                                <td className="font-mono text-primary">{item.code}</td>
-                                                <td className="font-medium text-white">{item.name}</td>
-                                                <td>
-                                                    <span className={`px-2 py-1 rounded text-xs ${item.status === 'ONGOING' ? 'text-success' : 'text-muted'}`}>
-                                                        {item.status}
-                                                    </span>
-                                                </td>
-                                                <td>{item.startDate}</td>
-                                                <td>{item.volunteerCount}</td>
+                                                <th>Code</th>
+                                                <th>Name</th>
+                                                <th>Status</th>
+                                                <th>Start Date</th>
+                                                <th>Volunteers</th>
                                             </>
                                         ) : (
                                             <>
-                                                <td className="text-white font-medium">{item.name}</td>
-                                                <td>{item.email}</td>
-                                                <td>{item.phone}</td>
-                                                <td>{item.studiesAttended} Studies</td>
+                                                <th>Name</th>
+                                                <th>Email</th>
+                                                <th>Phone</th>
+                                                <th>History</th>
                                             </>
                                         )}
-                                        <td>
-                                            <button onClick={() => {
-                                                if (searchType === 'study') navigate(`/prm/dashboard/${item.code}`);
-                                                else alert('Volunteer details coming soon');
-                                            }} className="text-primary hover:underline" style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>
-                                                View
-                                            </button>
-                                        </td>
+                                        <th>Action</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {searchResults.map((item, idx) => (
+                                        <tr key={idx} className="animate-slide-up">
+                                            {searchType === 'study' ? (
+                                                <>
+                                                    <td className="font-mono text-primary">{item.code}</td>
+                                                    <td className="font-medium text-white">{item.name}</td>
+                                                    <td>
+                                                        <span className={`px-2 py-1 rounded text-xs ${item.status === 'ONGOING' ? 'text-success' : 'text-muted'}`}>
+                                                            {item.status}
+                                                        </span>
+                                                    </td>
+                                                    <td>{item.startDate}</td>
+                                                    <td>{item.volunteerCount}</td>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <td className="text-white font-medium">{item.name}</td>
+                                                    <td>{item.email}</td>
+                                                    <td>{item.phone}</td>
+                                                    <td>{item.studiesAttended} Studies</td>
+                                                </>
+                                            )}
+                                            <td>
+                                                <button onClick={() => {
+                                                    if (searchType === 'study') navigate(`/prm/dashboard/${item.code}`);
+                                                    else alert('Volunteer details coming soon');
+                                                }} className="text-primary hover:underline" style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>
+                                                    View
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* Statistics Cards - Now Interactive */}
-            <div className="stats-grid">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.2rem', marginBottom: '2rem' }}>
                 <StatCard title="Total Studies (Lib)" value={dashboardData?.studies?.total || 0} icon={Database} colorVar="--primary" />
                 <div onClick={() => fetchCategoryStudies('ONGOING')} style={{ cursor: 'pointer' }}>
                     <StatCard title="Ongoing" value={dashboardData?.studies?.ongoing || 0} icon={Activity} colorVar="--chart-purple" />
@@ -439,17 +552,44 @@ const SBoard = () => {
 
             {/* Expanded Category Section */}
             {expandedCategory && (
-                <div className="glass-card animate-fade-in" style={{ marginBottom: '2rem', marginTop: '1rem' }}>
-                    <h3 className="chart-title" style={{ marginBottom: '1.5rem' }}>
-                        <Database size={18} className="text-primary" />
-                        {expandedCategory === 'ONGOING' && '🟢 Ongoing Studies'}
-                        {expandedCategory === 'UPCOMING' && '🔵 Upcoming Studies'}
-                        {expandedCategory === 'COMPLETED' && '🟠 Completed Studies'}
-                        {expandedCategory === 'DRT' && '🔴 DRT Studies'}
-                        <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                            ({categoryStudies.length})
-                        </span>
-                    </h3>
+                <div className="animate-fade-in" style={{
+                    marginBottom: '2rem',
+                    marginTop: '1rem',
+                    padding: '0',
+                    overflow: 'hidden',
+                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(20, 184, 166, 0.05) 100%)',
+                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                    borderRadius: '16px'
+                }}>
+                    <div style={{
+                        padding: '2rem 2rem 1.5rem',
+                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(20, 184, 166, 0.1) 100%)',
+                        borderBottom: '1px solid rgba(16, 185, 129, 0.2)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{
+                                width: '50px',
+                                height: '50px',
+                                borderRadius: '14px',
+                                background: 'linear-gradient(135deg, #10b981, #14b8a6)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)'
+                            }}>
+                                <Database size={26} color="white" />
+                            </div>
+                            <h3 style={{ fontSize: '1.4rem', fontWeight: '800', margin: 0 }}>
+                                {expandedCategory === 'ONGOING' && '🟢 Ongoing Studies'}
+                                {expandedCategory === 'UPCOMING' && '🔵 Upcoming Studies'}
+                                {expandedCategory === 'COMPLETED' && '🟠 Completed Studies'}
+                                {expandedCategory === 'DRT' && '🔴 DRT Studies'}
+                                <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                                    ({categoryStudies.length})
+                                </span>
+                            </h3>
+                        </div>
+                    </div>
 
                     {categoryLoading ? (
                         <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
@@ -460,138 +600,182 @@ const SBoard = () => {
                             No studies in this category
                         </div>
                     ) : (
-                        <div className="table-container">
-                            <table className="custom-table">
-                                <thead>
-                                    <tr>
-                                        <th>Study Code</th>
-                                        <th>Study Name</th>
-                                        <th>Start Date</th>
-                                        <th>Volunteers</th>
-                                        <th>Status</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {categoryStudies.map((study, idx) => (
-                                        <tr key={idx} className="animate-slide-up">
-                                            <td style={{ fontFamily: 'monospace', fontWeight: '600', color: 'var(--primary)' }}>
-                                                {study.studyCode}
-                                            </td>
-                                            <td style={{ fontWeight: '500' }}>
-                                                {study.studyName}
-                                            </td>
-                                            <td className="text-muted">
-                                                {study.startDate ? new Date(study.startDate).toLocaleDateString() : 'N/A'}
-                                            </td>
-                                            <td>
-                                                <span style={{
-                                                    padding: '0.3rem 0.8rem',
-                                                    background: study.volunteersAssigned >= study.volunteersPlanned ? '#10b98120' : '#f59e0b20',
-                                                    color: study.volunteersAssigned >= study.volunteersPlanned ? '#10b981' : '#f59e0b',
-                                                    borderRadius: '8px',
-                                                    fontSize: '0.85rem',
-                                                    fontWeight: '700'
-                                                }}>
-                                                    {study.volunteersAssigned}/{study.volunteersPlanned}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span style={{
-                                                    padding: '0.3rem 0.8rem',
-                                                    background: expandedCategory === 'ONGOING' ? '#8b5cf620' : expandedCategory === 'UPCOMING' ? '#3b82f620' : '#10b98120',
-                                                    color: expandedCategory === 'ONGOING' ? '#8b5cf6' : expandedCategory === 'UPCOMING' ? '#3b82f6' : '#10b981',
-                                                    borderRadius: '8px',
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: '700',
-                                                    textTransform: 'uppercase'
-                                                }}>
-                                                    {study.status}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <button
-                                                    onClick={() => navigate(`/prm/dashboard/${study.studyCode}`)}
-                                                    className="btn btn-outline"
-                                                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-                                                >
-                                                    View Details
-                                                </button>
-                                            </td>
+                        <div style={{ padding: '2rem' }}>
+                            <div style={{ maxHeight: '500px', overflow: 'auto' }}>
+                                <table style={{ width: '100%', minWidth: '800px', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                    <thead style={{ position: 'sticky', top: 0, background: 'linear-gradient(to right, #10b981, #14b8a6)', zIndex: 1 }}>
+                                        <tr style={{ textAlign: 'left', color: 'white' }}>
+                                            <th style={{ padding: '1rem', fontWeight: '700' }}>Study Code</th>
+                                            <th style={{ padding: '1rem', fontWeight: '700' }}>Study Name</th>
+                                            <th style={{ padding: '1rem', fontWeight: '700' }}>Start Date</th>
+                                            <th style={{ padding: '1rem', fontWeight: '700' }}>Volunteers</th>
+                                            <th style={{ padding: '1rem', fontWeight: '700' }}>Status</th>
+                                            <th style={{ padding: '1rem', fontWeight: '700' }}>Action</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {categoryStudies.map((study, idx) => (
+                                            <tr key={idx} className="animate-slide-up" style={{
+                                                borderBottom: '1px solid rgba(16, 185, 129, 0.1)',
+                                                transition: 'background 0.2s'
+                                            }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(16, 185, 129, 0.05)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                            >
+                                                <td style={{ padding: '1rem', fontFamily: 'monospace', fontWeight: '600', color: '#6366f1' }}>
+                                                    {study.studyCode}
+                                                </td>
+                                                <td style={{ padding: '1rem', fontWeight: '500', color: '#111827' }}>
+                                                    {study.studyName}
+                                                </td>
+                                                <td style={{ padding: '1rem', color: '#374151' }}>
+                                                    {study.startDate ? new Date(study.startDate).toLocaleDateString() : 'N/A'}
+                                                </td>
+                                                <td style={{ padding: '1rem' }}>
+                                                    <span style={{
+                                                        padding: '0.4rem 0.8rem',
+                                                        borderRadius: '8px',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: '700',
+                                                        background: study.volunteersAssigned >= study.volunteersPlanned ? 'rgba(34, 197, 94, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                                                        color: study.volunteersAssigned >= study.volunteersPlanned ? '#22c55e' : '#f59e0b'
+                                                    }}>
+                                                        {study.volunteersAssigned}/{study.volunteersPlanned}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '1rem' }}>
+                                                    <span style={{
+                                                        padding: '0.4rem 0.8rem',
+                                                        borderRadius: '8px',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: '700',
+                                                        textTransform: 'uppercase',
+                                                        background: expandedCategory === 'ONGOING' ? 'rgba(139, 92, 246, 0.15)' : expandedCategory === 'UPCOMING' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                                                        color: expandedCategory === 'ONGOING' ? '#8b5cf6' : expandedCategory === 'UPCOMING' ? '#3b82f6' : '#10b981'
+                                                    }}>
+                                                        {study.status}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '1rem' }}>
+                                                    <button
+                                                        onClick={() => navigate(`/prm/dashboard/${study.studyCode}`)}
+                                                        style={{
+                                                            padding: '0.5rem 1rem',
+                                                            background: 'linear-gradient(to right, #6366f1, #8b5cf6)',
+                                                            border: 'none',
+                                                            borderRadius: '8px',
+                                                            color: 'white',
+                                                            fontSize: '0.85rem',
+                                                            fontWeight: '600',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s',
+                                                            boxShadow: '0 2px 8px rgba(99, 102, 241, 0.3)'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.4)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.transform = 'translateY(0)';
+                                                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(99, 102, 241, 0.3)';
+                                                        }}
+                                                    >
+                                                        View Details
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     )}
                 </div>
             )}
 
             {/* Charts Grid */}
-            <div className="dashboard-grid">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
                 {/* Study Status Distribution */}
-                <div className="chart-card">
-                    <h3 className="chart-title">
-                        <TrendingUp size={20} className="text-primary" />
-                        Study Status Distribution
-                    </h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                            <Pie
-                                data={studyStatusData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={80}
-                                paddingAngle={5}
-                                dataKey="value"
-                            >
-                                {studyStatusData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.fill} stroke="rgba(0,0,0,0.5)" />
-                                ))}
-                            </Pie>
-                            <RechartsTooltip contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', color: 'var(--text-primary)' }} />
-                            <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                        </PieChart>
-                    </ResponsiveContainer>
+                <div style={{ padding: '0', overflow: 'hidden', borderRadius: '16px', background: 'white', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+                    <div style={{ padding: '1.5rem 2rem', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)', borderBottom: '1px solid rgba(99, 102, 241, 0.2)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                            <div style={{ padding: '0.7rem', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', borderRadius: '12px', display: 'flex', boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)' }}>
+                                <TrendingUp size={20} color="white" />
+                            </div>
+                            <h3 style={{ fontSize: '1.3rem', fontWeight: '800', margin: 0 }}>Study Status Distribution</h3>
+                        </div>
+                    </div>
+                    <div style={{ padding: '2rem' }}>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie
+                                    data={studyStatusData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                >
+                                    {studyStatusData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.fill} stroke="rgba(0,0,0,0.5)" />
+                                    ))}
+                                </Pie>
+                                <RechartsTooltip contentStyle={{ backgroundColor: 'white', border: '1px solid rgba(99, 102, 241, 0.2)', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }} />
+                                <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
 
                 {/* Studies by Type */}
-                <div className="chart-card">
-                    <h3 className="chart-title">
-                        <Database size={20} color="var(--chart-pink)" />
-                        Studies by Type (Masters)
-                    </h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={studyTypeData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                            <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} />
-                            <YAxis stroke="var(--text-muted)" fontSize={12} />
-                            <RechartsTooltip cursor={{ fill: 'var(--bg-panel)' }} contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', color: 'var(--text-primary)' }} />
-                            <Bar dataKey="value" fill="var(--chart-pink)" radius={[4, 4, 0, 0]} name="Studies" />
-                        </BarChart>
-                    </ResponsiveContainer>
+                <div style={{ padding: '0', overflow: 'hidden', borderRadius: '16px', background: 'white', border: '1px solid rgba(236, 72, 153, 0.2)' }}>
+                    <div style={{ padding: '1.5rem 2rem', background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(244, 114, 182, 0.1) 100%)', borderBottom: '1px solid rgba(236, 72, 153, 0.2)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                            <div style={{ padding: '0.7rem', background: 'linear-gradient(135deg, #ec4899, #f472b6)', borderRadius: '12px', display: 'flex', boxShadow: '0 4px 15px rgba(236, 72, 153, 0.3)' }}>
+                                <Database size={20} color="white" />
+                            </div>
+                            <h3 style={{ fontSize: '1.3rem', fontWeight: '800', margin: 0 }}>Studies by Type (Masters)</h3>
+                        </div>
+                    </div>
+                    <div style={{ padding: '2rem' }}>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={studyTypeData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(236, 72, 153, 0.1)" />
+                                <XAxis dataKey="name" stroke="#6b7280" fontSize={12} fontWeight={600} />
+                                <YAxis stroke="#6b7280" fontSize={12} />
+                                <RechartsTooltip cursor={{ fill: 'rgba(236, 72, 153, 0.05)' }} contentStyle={{ backgroundColor: 'white', border: '1px solid rgba(236, 72, 153, 0.2)', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }} />
+                                <Bar dataKey="value" fill="#ec4899" radius={[8, 8, 0, 0]} name="Studies" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
             </div>
 
             {/* Monthly Trend (Full Width) */}
             {analyticsData?.studiesByMonth && (
-                <div className="chart-card" style={{ marginBottom: '2rem' }}>
-                    <div className="chart-title">
-                        <TrendingUp size={20} color="var(--accent)" />
-                        <h3>Study Initiation Trend</h3>
+                <div style={{ marginBottom: '2rem', padding: '0', overflow: 'hidden', borderRadius: '16px', background: 'white', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+                    <div style={{ padding: '1.5rem 2rem', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%)', borderBottom: '1px solid rgba(139, 92, 246, 0.2)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                            <div style={{ padding: '0.7rem', background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)', borderRadius: '12px', display: 'flex', boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)' }}>
+                                <TrendingUp size={20} color="white" />
+                            </div>
+                            <h3 style={{ fontSize: '1.4rem', fontWeight: '800', margin: 0 }}>Study Initiation Trend</h3>
+                        </div>
                     </div>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={analyticsData.studiesByMonth}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                            <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={12} />
-                            <YAxis stroke="var(--text-muted)" fontSize={12} />
-                            <RechartsTooltip contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', color: 'var(--text-primary)' }} />
-                            <Legend verticalAlign="top" height={36} />
-                            <Line type="monotone" dataKey="count" stroke="var(--chart-blue)" strokeWidth={3} dot={{ r: 6 }} name="New Studies" />
-                            <Line type="monotone" dataKey="volunteers" stroke="var(--chart-green)" strokeWidth={3} dot={{ r: 6 }} name="Planned Volunteers" />
-                        </LineChart>
-                    </ResponsiveContainer>
+                    <div style={{ padding: '2rem' }}>
+                        <ResponsiveContainer width="100%" height={320}>
+                            <LineChart data={analyticsData.studiesByMonth}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(139, 92, 246, 0.1)" />
+                                <XAxis dataKey="month" stroke="#6b7280" fontSize={12} fontWeight={600} />
+                                <YAxis stroke="#6b7280" fontSize={12} />
+                                <RechartsTooltip contentStyle={{ backgroundColor: 'white', border: '1px solid rgba(139, 92, 246, 0.2)', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }} />
+                                <Legend verticalAlign="top" height={40} wrapperStyle={{ paddingBottom: '1rem' }} />
+                                <Line type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={3} dot={{ r: 6 }} name="New Studies" />
+                                <Line type="monotone" dataKey="volunteers" stroke="#10b981" strokeWidth={3} dot={{ r: 6 }} name="Planned Volunteers" />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
             )}
 
