@@ -52,6 +52,10 @@ const VolunteerTracker = () => {
     const [loading, setLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState(new Date());
 
+    // Search states
+    const [preRegSearch, setPreRegSearch] = useState('');
+    const [approvedSearch, setApprovedSearch] = useState('');
+
     useEffect(() => {
         fetchData();
         const interval = setInterval(fetchData, 30000);
@@ -119,6 +123,39 @@ const VolunteerTracker = () => {
             alert('Failed to approve volunteer');
         }
     };
+
+    const deleteVolunteer = async (volunteerId, volunteerName) => {
+        if (!window.confirm(`Are you sure you want to delete volunteer "${volunteerName}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            await axios.delete(
+                `http://localhost:8000/api/v1/admin/dashboard/volunteers/${volunteerId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            fetchData(); // Refresh data
+            alert('Volunteer deleted successfully');
+        } catch (err) {
+            console.error('Failed to delete volunteer', err);
+            alert(err.response?.data?.detail || 'Failed to delete volunteer');
+        }
+    };
+
+    // Filter volunteers based on search
+    const filteredPreReg = preRegVolunteers.filter(v =>
+        !preRegSearch ||
+        v.name?.toLowerCase().includes(preRegSearch.toLowerCase()) ||
+        v.contact?.includes(preRegSearch) ||
+        v.volunteer_id?.toLowerCase().includes(preRegSearch.toLowerCase())
+    );
+
+    const filteredApproved = approvedVolunteers.filter(v =>
+        !approvedSearch ||
+        v.name?.toLowerCase().includes(approvedSearch.toLowerCase()) ||
+        v.contact?.includes(approvedSearch) ||
+        v.volunteer_id?.toLowerCase().includes(approvedSearch.toLowerCase())
+    );
 
     if (loading) {
         return (
@@ -211,11 +248,29 @@ const VolunteerTracker = () => {
 
             {/* Pre-Registration Table */}
             <div className="glass-card" style={{ marginBottom: '2rem' }}>
-                <h3 style={{ fontSize: '1.3rem', fontWeight: '700', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Users size={20} color="var(--chart-blue)" />
-                    Pre-Registration & Medical Review ({preRegVolunteers.length})
-                </h3>
-                <div style={{ overflowX: 'auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                    <h3 style={{ fontSize: '1.3rem', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Users size={20} color="var(--chart-blue)" />
+                        Pre-Registration & Medical Review ({filteredPreReg.length})
+                    </h3>
+                    <input
+                        type="search"
+                        placeholder="Search by name, contact, or ID..."
+                        value={preRegSearch}
+                        onChange={(e) => setPreRegSearch(e.target.value)}
+                        style={{
+                            padding: '0.7rem 1rem',
+                            borderRadius: '10px',
+                            border: '2px solid var(--border-color)',
+                            background: 'var(--bg-panel)',
+                            fontSize: '0.9rem',
+                            fontWeight: '500',
+                            minWidth: '300px',
+                            transition: 'all 0.2s'
+                        }}
+                    />
+                </div>
+                <div style={{ maxHeight: '500px', overflowY: 'auto', overflowX: 'auto' }}>
                     <table className="custom-table">
                         <thead>
                             <tr>
@@ -225,10 +280,11 @@ const VolunteerTracker = () => {
                                 <th>Gender</th>
                                 <th>Medical Status</th>
                                 <th>Actions</th>
+                                <th>Delete</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {preRegVolunteers.map((vol, idx) => (
+                            {filteredPreReg.map((vol, idx) => (
                                 <tr key={idx} className="animate-slide-up">
                                     <td style={{ fontWeight: '600' }}>{vol.name}</td>
                                     <td className="text-muted">{vol.contact}</td>
@@ -266,10 +322,21 @@ const VolunteerTracker = () => {
                                             )}
                                         </div>
                                     </td>
+                                    <td>
+                                        <button
+                                            onClick={() => deleteVolunteer(vol.volunteer_id, vol.name)}
+                                            className="btn btn-sm"
+                                            style={{ background: 'linear-gradient(to right, #ef4444, #dc2626)', color: 'white' }}
+                                        >
+                                            Delete
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
-                            {preRegVolunteers.length === 0 && (
-                                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No pre-registration volunteers</td></tr>
+                            {filteredPreReg.length === 0 && (
+                                <tr><td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                                    {preRegSearch ? 'No volunteers found matching your search' : 'No pre-registration volunteers'}
+                                </td></tr>
                             )}
                         </tbody>
                     </table>
@@ -278,11 +345,29 @@ const VolunteerTracker = () => {
 
             {/* Approved Volunteers Table */}
             <div className="glass-card">
-                <h3 style={{ fontSize: '1.3rem', fontWeight: '700', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <CheckCircle size={20} color="var(--success)" />
-                    Approved Volunteers ({approvedVolunteers.length})
-                </h3>
-                <div style={{ overflowX: 'auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                    <h3 style={{ fontSize: '1.3rem', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <CheckCircle size={20} color="var(--success)" />
+                        Approved Volunteers ({filteredApproved.length})
+                    </h3>
+                    <input
+                        type="search"
+                        placeholder="Search by name, contact, or ID..."
+                        value={approvedSearch}
+                        onChange={(e) => setApprovedSearch(e.target.value)}
+                        style={{
+                            padding: '0.7rem 1rem',
+                            borderRadius: '10px',
+                            border: '2px solid var(--border-color)',
+                            background: 'var(--bg-panel)',
+                            fontSize: '0.9rem',
+                            fontWeight: '500',
+                            minWidth: '300px',
+                            transition: 'all 0.2s'
+                        }}
+                    />
+                </div>
+                <div style={{ maxHeight: '500px', overflowY: 'auto', overflowX: 'auto' }}>
                     <table className="custom-table">
                         <thead>
                             <tr>
@@ -295,7 +380,7 @@ const VolunteerTracker = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {approvedVolunteers.map((vol, idx) => (
+                            {filteredApproved.map((vol, idx) => (
                                 <tr key={idx} className="animate-slide-up">
                                     <td style={{ fontWeight: '600' }}>{vol.name}</td>
                                     <td className="text-muted">{vol.contact}</td>
@@ -332,8 +417,10 @@ const VolunteerTracker = () => {
                                     </td>
                                 </tr>
                             ))}
-                            {approvedVolunteers.length === 0 && (
-                                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No approved volunteers</td></tr>
+                            {filteredApproved.length === 0 && (
+                                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                                    {approvedSearch ? 'No volunteers found matching your search' : 'No approved volunteers'}
+                                </td></tr>
                             )}
                         </tbody>
                     </table>

@@ -92,11 +92,19 @@ const SBoard = () => {
     const [categoryLoading, setCategoryLoading] = useState(false);
     const [searching, setSearching] = useState(false);
 
+    // Volunteer Lists State
+    const [preScreeningVolunteers, setPreScreeningVolunteers] = useState([]);
+    const [approvedVolunteers, setApprovedVolunteers] = useState([]);
+    const [volunteerSearchPre, setVolunteerSearchPre] = useState('');
+    const [volunteerSearchApproved, setVolunteerSearchApproved] = useState('');
+    const [volunteersLoading, setVolunteersLoading] = useState(false);
+
     useEffect(() => {
         if (id) {
             fetchStudyParticipation(id);
         } else {
             fetchGlobalStats();
+            fetchVolunteers(); // Fetch volunteers for dashboard view
         }
     }, [id, token]);
 
@@ -157,6 +165,34 @@ const SBoard = () => {
         }
     };
 
+    const downloadAttendance = async (studyCode) => {
+        if (!studyCode) {
+            alert('Please enter a study code to download attendance.');
+            return;
+        }
+        try {
+            const response = await axios.get(`http://localhost:8000/api/v1/prm/attendance/export/${encodeURIComponent(studyCode)}`, {
+                headers: { Authorization: `Bearer ${token}` },
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Attendance_${studyCode}_${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err) {
+            if (err.response?.status === 404) {
+                alert('No attendance records found for this study.');
+            } else {
+                alert('Failed to download attendance report.');
+            }
+            console.error('Attendance download error:', err);
+        }
+    };
+
     const handleSearch = async (e) => {
         e.preventDefault();
         if (!searchQuery.trim()) return;
@@ -197,6 +233,54 @@ const SBoard = () => {
     const clearSearch = () => {
         setSearchQuery('');
         setSearchResults(null);
+    };
+
+    // Volunteer Management Functions
+    const fetchVolunteers = async () => {
+        setVolunteersLoading(true);
+        try {
+            const [preScreeningRes, approvedRes] = await Promise.all([
+                axios.get('http://localhost:8000/api/v1/admin/dashboard/volunteers?stage=pre-screening&limit=1000', {
+                    headers: { Authorization: `Bearer ${token}` }
+                }),
+                axios.get('http://localhost:8000/api/v1/admin/dashboard/volunteers?status=approved&limit=1000', {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+            ]);
+
+            if (preScreeningRes.data.success) {
+                setPreScreeningVolunteers(preScreeningRes.data.volunteers || []);
+            }
+            if (approvedRes.data.success) {
+                setApprovedVolunteers(approvedRes.data.volunteers || []);
+            }
+        } catch (err) {
+            console.error('Failed to fetch volunteers', err);
+        } finally {
+            setVolunteersLoading(false);
+        }
+    };
+
+    const handleDeleteVolunteer = async (volunteerId, volunteerName) => {
+        if (!window.confirm(`Are you sure you want to delete volunteer "${volunteerName}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            const response = await axios.delete(
+                `http://localhost:8000/api/v1/admin/dashboard/volunteers/${volunteerId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (response.data.success) {
+                // Remove from local state
+                setPreScreeningVolunteers(prev => prev.filter(v => v.volunteer_id !== volunteerId));
+                alert('Volunteer deleted successfully');
+            }
+        } catch (err) {
+            console.error('Failed to delete volunteer', err);
+            alert(err.response?.data?.detail || 'Failed to delete volunteer');
+        }
     };
 
     // --- RENDER ---
@@ -389,7 +473,7 @@ const SBoard = () => {
                 </div>
             </div>
 
-            {/* Search Bar */}
+            {/* Search Bar with Attendance Download */}
             <form onSubmit={handleSearch} style={{
                 marginBottom: '2rem',
                 padding: '1.5rem',
@@ -430,6 +514,38 @@ const SBoard = () => {
                 <button type="submit" disabled={searching} className="btn btn-outline" style={{ padding: '0.5rem 1rem' }}>
                     {searching ? '...' : 'Search'}
                 </button>
+                {searchType === 'study' && (
+                    <button
+                        type="button"
+                        onClick={() => downloadAttendance(searchQuery)}
+                        style={{
+                            padding: '0.7rem 1.3rem',
+                            background: 'linear-gradient(to right, #10b981, #14b8a6)',
+                            border: 'none',
+                            borderRadius: '12px',
+                            color: 'white',
+                            fontSize: '0.9rem',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.3)';
+                        }}
+                    >
+                        <FileDown size={18} />
+                        Download Attendance
+                    </button>
+                )}
             </form>
 
             {/* Search Results */}
@@ -778,6 +894,318 @@ const SBoard = () => {
                     </div>
                 </div>
             )}
+
+            {/* Pre-Screening Volunteers Section */}
+            <div style={{
+                marginBottom: '2rem',
+                padding: '0',
+                overflow: 'hidden',
+                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(251, 191, 36, 0.05) 100%)',
+                border: '1px solid rgba(245, 158, 11, 0.2)',
+                borderRadius: '16px'
+            }}>
+                <div style={{
+                    padding: '2rem 2rem 1.5rem',
+                    background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.1) 100%)',
+                    borderBottom: '1px solid rgba(245, 158, 11, 0.2)'
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{
+                                width: '50px',
+                                height: '50px',
+                                borderRadius: '14px',
+                                background: 'linear-gradient(135deg, #f59e0b, #fbbf24)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 4px 15px rgba(245, 158, 11, 0.4)'
+                            }}>
+                                <Users size={26} color="white" />
+                            </div>
+                            <div>
+                                <h3 style={{ fontSize: '1.4rem', fontWeight: '800', margin: 0, marginBottom: '0.3rem' }}>
+                                    Pre-Screening Volunteers
+                                    <span style={{ marginLeft: '0.8rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                                        ({preScreeningVolunteers.filter(v =>
+                                            !volunteerSearchPre ||
+                                            v.pre_screening?.name?.toLowerCase().includes(volunteerSearchPre.toLowerCase()) ||
+                                            v.volunteer_id?.toLowerCase().includes(volunteerSearchPre.toLowerCase()) ||
+                                            v.pre_screening?.contact?.includes(volunteerSearchPre)
+                                        ).length})
+                                    </span>
+                                </h3>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>Manage and delete pre-screening volunteers</p>
+                            </div>
+                        </div>
+                        <input
+                            type="search"
+                            placeholder="Search by name, ID, or contact..."
+                            value={volunteerSearchPre}
+                            onChange={(e) => setVolunteerSearchPre(e.target.value)}
+                            style={{
+                                minWidth: '300px',
+                                padding: '0.9rem 1.2rem',
+                                borderRadius: '12px',
+                                border: '2px solid rgba(245, 158, 11, 0.3)',
+                                background: 'rgba(255, 255, 255, 0.9)',
+                                fontSize: '0.95rem',
+                                fontWeight: '500',
+                                transition: 'all 0.2s'
+                            }}
+                        />
+                    </div>
+                </div>
+
+                <div style={{ padding: '2rem' }}>
+                    {volunteersLoading ? (
+                        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                            Loading volunteers...
+                        </div>
+                    ) : (
+                        <div style={{ maxHeight: '500px', overflow: 'auto' }}>
+                            {preScreeningVolunteers
+                                .filter(v =>
+                                    !volunteerSearchPre ||
+                                    v.pre_screening?.name?.toLowerCase().includes(volunteerSearchPre.toLowerCase()) ||
+                                    v.volunteer_id?.toLowerCase().includes(volunteerSearchPre.toLowerCase()) ||
+                                    v.pre_screening?.contact?.includes(volunteerSearchPre)
+                                )
+                                .map((volunteer, idx) => (
+                                    <div key={volunteer._id || idx} style={{
+                                        padding: '1.2rem',
+                                        marginBottom: '1rem',
+                                        background: 'white',
+                                        borderRadius: '12px',
+                                        border: '1px solid rgba(245, 158, 11, 0.2)',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        transition: 'all 0.2s'
+                                    }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.15)';
+                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.boxShadow = 'none';
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                        }}
+                                    >
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+                                                <div>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: '600' }}>Name</p>
+                                                    <p style={{ fontWeight: '600', fontSize: '1rem', margin: 0 }}>{volunteer.pre_screening?.name || 'N/A'}</p>
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: '600' }}>ID</p>
+                                                    <p style={{ fontWeight: '500', fontSize: '0.9rem', margin: 0, fontFamily: 'monospace', color: '#6366f1' }}>{volunteer.volunteer_id}</p>
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: '600' }}>Contact</p>
+                                                    <p style={{ fontWeight: '500', fontSize: '0.9rem', margin: 0 }}>{volunteer.pre_screening?.contact || 'N/A'}</p>
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: '600' }}>Age</p>
+                                                    <p style={{ fontWeight: '500', fontSize: '0.9rem', margin: 0 }}>{volunteer.pre_screening?.age || 'N/A'}</p>
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: '600' }}>Gender</p>
+                                                    <p style={{ fontWeight: '500', fontSize: '0.9rem', margin: 0 }}>{volunteer.pre_screening?.gender || 'N/A'}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => handleDeleteVolunteer(volunteer.volunteer_id, volunteer.pre_screening?.name)}
+                                            style={{
+                                                padding: '0.6rem 1.2rem',
+                                                background: 'linear-gradient(to right, #ef4444, #dc2626)',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                color: 'white',
+                                                fontSize: '0.85rem',
+                                                fontWeight: '600',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.transform = 'translateY(0)';
+                                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(239, 68, 68, 0.3)';
+                                            }}
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                ))}
+                            {preScreeningVolunteers.filter(v =>
+                                !volunteerSearchPre ||
+                                v.pre_screening?.name?.toLowerCase().includes(volunteerSearchPre.toLowerCase()) ||
+                                v.volunteer_id?.toLowerCase().includes(volunteerSearchPre.toLowerCase()) ||
+                                v.pre_screening?.contact?.includes(volunteerSearchPre)
+                            ).length === 0 && (
+                                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                                        No volunteers found
+                                    </div>
+                                )}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Approved Volunteers Section */}
+            <div style={{
+                marginBottom: '2rem',
+                padding: '0',
+                overflow: 'hidden',
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(20, 184, 166, 0.05) 100%)',
+                border: '1px solid rgba(16, 185, 129, 0.2)',
+                borderRadius: '16px'
+            }}>
+                <div style={{
+                    padding: '2rem 2rem 1.5rem',
+                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(20, 184, 166, 0.1) 100%)',
+                    borderBottom: '1px solid rgba(16, 185, 129, 0.2)'
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{
+                                width: '50px',
+                                height: '50px',
+                                borderRadius: '14px',
+                                background: 'linear-gradient(135deg, #10b981, #14b8a6)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)'
+                            }}>
+                                <CheckCircle size={26} color="white" />
+                            </div>
+                            <div>
+                                <h3 style={{ fontSize: '1.4rem', fontWeight: '800', margin: 0, marginBottom: '0.3rem' }}>
+                                    Approved Volunteers
+                                    <span style={{ marginLeft: '0.8rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                                        ({approvedVolunteers.filter(v =>
+                                            !volunteerSearchApproved ||
+                                            v.pre_screening?.name?.toLowerCase().includes(volunteerSearchApproved.toLowerCase()) ||
+                                            v.volunteer_id?.toLowerCase().includes(volunteerSearchApproved.toLowerCase()) ||
+                                            v.pre_screening?.contact?.includes(volunteerSearchApproved)
+                                        ).length})
+                                    </span>
+                                </h3>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>View approved volunteers</p>
+                            </div>
+                        </div>
+                        <input
+                            type="search"
+                            placeholder="Search by name, ID, or contact..."
+                            value={volunteerSearchApproved}
+                            onChange={(e) => setVolunteerSearchApproved(e.target.value)}
+                            style={{
+                                minWidth: '300px',
+                                padding: '0.9rem 1.2rem',
+                                borderRadius: '12px',
+                                border: '2px solid rgba(16, 185, 129, 0.3)',
+                                background: 'rgba(255, 255, 255, 0.9)',
+                                fontSize: '0.95rem',
+                                fontWeight: '500',
+                                transition: 'all 0.2s'
+                            }}
+                        />
+                    </div>
+                </div>
+
+                <div style={{ padding: '2rem' }}>
+                    {volunteersLoading ? (
+                        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                            Loading volunteers...
+                        </div>
+                    ) : (
+                        <div style={{ maxHeight: '500px', overflow: 'auto' }}>
+                            {approvedVolunteers
+                                .filter(v =>
+                                    !volunteerSearchApproved ||
+                                    v.pre_screening?.name?.toLowerCase().includes(volunteerSearchApproved.toLowerCase()) ||
+                                    v.volunteer_id?.toLowerCase().includes(volunteerSearchApproved.toLowerCase()) ||
+                                    v.pre_screening?.contact?.includes(volunteerSearchApproved)
+                                )
+                                .map((volunteer, idx) => (
+                                    <div key={volunteer._id || idx} style={{
+                                        padding: '1.2rem',
+                                        marginBottom: '1rem',
+                                        background: 'white',
+                                        borderRadius: '12px',
+                                        border: '1px solid rgba(16, 185, 129, 0.2)',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        transition: 'all 0.2s'
+                                    }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.15)';
+                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.boxShadow = 'none';
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                        }}
+                                    >
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+                                                <div>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: '600' }}>Name</p>
+                                                    <p style={{ fontWeight: '600', fontSize: '1rem', margin: 0 }}>{volunteer.pre_screening?.name || 'N/A'}</p>
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: '600' }}>ID</p>
+                                                    <p style={{ fontWeight: '500', fontSize: '0.9rem', margin: 0, fontFamily: 'monospace', color: '#6366f1' }}>{volunteer.volunteer_id}</p>
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: '600' }}>Contact</p>
+                                                    <p style={{ fontWeight: '500', fontSize: '0.9rem', margin: 0 }}>{volunteer.pre_screening?.contact || 'N/A'}</p>
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: '600' }}>Age</p>
+                                                    <p style={{ fontWeight: '500', fontSize: '0.9rem', margin: 0 }}>{volunteer.pre_screening?.age || 'N/A'}</p>
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: '600' }}>Gender</p>
+                                                    <p style={{ fontWeight: '500', fontSize: '0.9rem', margin: 0 }}>{volunteer.pre_screening?.gender || 'N/A'}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style={{
+                                            padding: '0.6rem 1.2rem',
+                                            background: 'rgba(16, 185, 129, 0.15)',
+                                            borderRadius: '8px',
+                                            fontSize: '0.85rem',
+                                            fontWeight: '700',
+                                            color: '#10b981',
+                                            textTransform: 'uppercase'
+                                        }}>
+                                            Approved
+                                        </div>
+                                    </div>
+                                ))}
+                            {approvedVolunteers.filter(v =>
+                                !volunteerSearchApproved ||
+                                v.pre_screening?.name?.toLowerCase().includes(volunteerSearchApproved.toLowerCase()) ||
+                                v.volunteer_id?.toLowerCase().includes(volunteerSearchApproved.toLowerCase()) ||
+                                v.pre_screening?.contact?.includes(volunteerSearchApproved)
+                            ).length === 0 && (
+                                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                                        No volunteers found
+                                    </div>
+                                )}
+                        </div>
+                    )}
+                </div>
+            </div>
 
         </div>
     );

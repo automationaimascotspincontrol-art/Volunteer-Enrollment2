@@ -107,6 +107,8 @@ async def search_dashboard(
         query = {
             "$or": [
                 {"studyName": {"$regex": q, "$options": "i"}},
+                {"enteredStudyCode": {"$regex": q, "$options": "i"}},
+                {"studyInstanceCode": {"$regex": q, "$options": "i"}},
                 {"studyId": {"$regex": q, "$options": "i"}}
             ]
         }
@@ -116,9 +118,12 @@ async def search_dashboard(
             iid = str(i["_id"])
             v_count = await db.study_visits.count_documents({"studyInstanceId": iid})
             
+            # Use the entered study code or studyInstanceCode as the code
+            study_code = i.get("enteredStudyCode") or i.get("studyInstanceCode") or i.get("studyId", "N/A")
+            
             results.append({
                 "id": str(i["_id"]),
-                "code": i.get("studyId", "N/A"),
+                "code": study_code,
                 "name": i.get("studyName", "Unknown"),
                 "startDate": i.get("startDate"),
                 "status": i.get("status"),
