@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from datetime import datetime, timezone
 from typing import List, Optional
 from pydantic import BaseModel
@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from app.api.v1.deps import get_current_user
 from app.db.mongodb import db
 from app.db.odm.volunteer_attendance import VolunteerAttendance
+from app.db.odm.assigned_study import AssignedStudy
 
 router = APIRouter(prefix="/volunteers", tags=["volunteers"])
 
@@ -14,6 +15,10 @@ router = APIRouter(prefix="/volunteers", tags=["volunteers"])
 class AttendanceToggleRequest(BaseModel):
     volunteer_id: str
     action: str  # "IN" or "OUT"
+
+class BulkAttendanceRequest(BaseModel):
+    volunteer_ids: List[str]
+    action: str # "IN" or "OUT"
 
 
 class MedicalStatusUpdate(BaseModel):
@@ -141,15 +146,35 @@ async def get_pre_registration_volunteers(current_user: dict = Depends(get_curre
 
 
 @router.get("/approved")
-async def get_approved_volunteers(current_user: dict = Depends(get_current_user)):
+async def get_approved_volunteers(
+    study_id: Optional[str] = Query(None, description="Filter by Study Instance ID"),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Get list of approved volunteers with attendance status.
+    Optionally filter by study_id to see only volunteers assigned to that study.
     """
     try:
-        volunteers = await db.volunteers_master.find({
+        query = {
             "current_stage": "registered",
             "current_status": "approved"
-        }).to_list(100)
+        }
+
+        # If filtered by study, get assigned volunteer IDs first
+        if study_id:
+            assigned_vols = await AssignedStudy.find(
+                {"study_id": study_id}
+            ).to_list()
+            
+            # Extract list of volunteer IDs assigned to this study
+            assigned_ids = [a.volunteer_id for a in assigned_vols]
+            
+            if not assigned_ids:
+                return [] # Return empty if no one is assigned to this study
+                
+            query["volunteer_id"] = {"$in": assigned_ids}
+
+        volunteers = await db.volunteers_master.find(query).to_list(1000) # Increased limit for study view
         
         result = []
         for vol in volunteers:
@@ -176,8 +201,12 @@ async def get_approved_volunteers(current_user: dict = Depends(get_current_user)
                 "approval_date": vol.get("approval_date")
             })
         
+        # Sort: Active ("IN") first, then by name
+        result.sort(key=lambda x: (x["attendance_status"] == "OUT", x["name"]))
+        
         return result
     except Exception as e:
+        print(f"Error fetching approved volunteers: {e}")
         # Return mock data
         return [
             {
@@ -258,6 +287,67 @@ async def toggle_attendance(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to toggle attendance: {str(e)}")
+
+
+@router.post("/attendance/bulk-toggle")
+async def bulk_toggle_attendance(
+    request: BulkAttendanceRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Bulk Toggle volunteer attendance IN/OUT for multiple volunteers.
+    """
+    try:
+        volunteer_ids = request.volunteer_ids
+        action = request.action.upper()
+        
+        if action not in ["IN", "OUT"]:
+            raise HTTPException(status_code=400, detail="Action must be 'IN' or 'OUT'")
+            
+        success_count = 0
+        errors = []
+        
+        for vid in volunteer_ids:
+             try:
+                # Find or create attendance record
+                attendance = await VolunteerAttendance.find_one({"volunteer_id": vid})
+                
+                if not attendance:
+                    # Create new attendance record
+                    volunteer = await db.volunteers_master.find_one({"volunteer_id": vid})
+                    if not volunteer:
+                        continue # Skip invalid IDs silently
+                    
+                    basic_info = volunteer.get("basic_info", {})
+                    attendance = VolunteerAttendance(
+                        volunteer_id=vid,
+                        volunteer_name=basic_info.get("name", "Unknown"),
+                        assigned_study_id="",
+                        study_code="",
+                        study_name=""
+                    )
+                
+                if action == "IN":
+                    if not attendance.is_active: # Only check in if not already
+                         attendance.check_in()
+                         await attendance.save()
+                         success_count += 1
+                else:
+                    if attendance.is_active: # Only check out if active
+                        attendance.check_out()
+                        await attendance.save()
+                        success_count += 1
+                        
+             except Exception as e:
+                 errors.append(f"{vid}: {str(e)}")
+                 
+        return {
+            "success": True,
+            "updated_count": success_count,
+            "errors": errors if errors else None
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to bulk toggle attendance: {str(e)}")
 
 
 @router.patch("/{volunteer_id}/medical-status")
