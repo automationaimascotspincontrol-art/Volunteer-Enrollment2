@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     # Database
     MONGODB_URL: str = "mongodb://localhost:27017"
-    DATABASE_NAME: str = "live_enrollment_db"
+    DATABASE_NAME: str = "test_enrollment_db"
 
     # Security
     SECRET_KEY: str = None  # Must be set in .env

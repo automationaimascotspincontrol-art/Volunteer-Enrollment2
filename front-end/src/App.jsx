@@ -19,6 +19,7 @@ import ManagementDashboard from './pages/recruiter/ManagementDashboard';
 import VolunteerList from './pages/recruiter/VolunteerList';
 import FieldForm from './pages/field/FieldForm';
 import UserManagement from './pages/admin/UserManagement';
+import FullVolunteerSearch from './pages/admin/FullVolunteerSearch';
 import PRMDashboard from './pages/prm/PRMDashboard';
 import PRMCalendar from './pages/prm/PRMCalendar';
 import VolunteerTracker from './pages/prm/VolunteerTracker';
@@ -99,6 +100,10 @@ const AppRoutes = () => {
 
             <Route path="/volunteer-list" element={<VolunteerList />} />
             <Route path="/admin/volunteers" element={<VolunteerList />} />
+
+            {/* New Full Database Search */}
+            <Route path="/admin/full-search" element={<FullVolunteerSearch />} />
+
             <Route path="/admin/users" element={<UserManagement />} />
 
             {/* Fallback */}

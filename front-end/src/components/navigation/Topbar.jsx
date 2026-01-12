@@ -153,6 +153,26 @@ const Topbar = () => {
                             </NavLink>
 
                             <NavLink
+                                to="/admin/full-search"
+                                style={({ isActive }) => ({
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    padding: '0.6rem 1rem',
+                                    borderRadius: '10px',
+                                    textDecoration: 'none',
+                                    fontWeight: '600',
+                                    fontSize: '0.95rem',
+                                    transition: 'all 0.2s',
+                                    background: isActive ? 'var(--bg-panel)' : 'transparent',
+                                    color: isActive ? 'var(--primary)' : 'var(--text-muted)'
+                                })}
+                            >
+                                <Search size={18} />
+                                <span>Full Database</span>
+                            </NavLink>
+
+                            <NavLink
                                 to="/prm/assigned-studies"
                                 style={({ isActive }) => ({
                                     display: 'flex',

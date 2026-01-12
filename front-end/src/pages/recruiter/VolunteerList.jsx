@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../api/api';
-import { Search, ChevronLeft, ChevronRight, Filter, Users, Activity, Save, User, Phone, Calendar, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Filter, ChevronDown, ChevronUp, Download, Eye, Edit2, Save, X, Phone, MapPin, Calendar, BadgeInfo, CreditCard } from 'lucide-react';
 import { Select, Input } from '../../components/ui';
 import '../../styles/VolunteerList.css';
 
@@ -9,21 +9,30 @@ import '../../styles/VolunteerList.css';
 const VolunteerExpandableRow = ({ volunteer, onUpdate, onClose }) => {
     const [editing, setEditing] = useState(false);
     const [formData, setFormData] = useState({
-        name: volunteer?.pre_screening?.name || '',
-        contact: volunteer?.pre_screening?.contact || '',
-        location: volunteer?.pre_screening?.location || '',
-        age: volunteer?.pre_screening?.age || '',
-        address: volunteer?.pre_screening?.address || ''
+        name: volunteer?.basic_info?.name || volunteer?.pre_screening?.name || volunteer?.name || '',
+        contact: volunteer?.basic_info?.contact || volunteer?.pre_screening?.contact || volunteer?.phone || volunteer?.mobile || '',
+        location: volunteer?.basic_info?.location || volunteer?.pre_screening?.location || volunteer?.city || '',
+        age: volunteer?.basic_info?.age || volunteer?.pre_screening?.age || volunteer?.age || '',
+        address: volunteer?.basic_info?.address || volunteer?.pre_screening?.address || volunteer?.address || '',
+        id_proof_type: volunteer?.id_proof_type || '',
+        id_proof_number: volunteer?.id_proof_number || ''
     });
     const [saving, setSaving] = useState(false);
 
     const handleSave = async () => {
         try {
             setSaving(true);
-            await api.patch(`/dashboard/volunteers/${volunteer.volunteer_id}`, {
+            await api.patch(`/admin/dashboard/volunteers/${volunteer.volunteer_id}`, {
                 pre_screening: {
-                    ...volunteer.pre_screening,
-                    ...formData
+                    name: formData.name,
+                    contact: formData.contact,
+                    location: formData.location,
+                    age: formData.age,
+                    address: formData.address
+                },
+                id_proof: {
+                    type: formData.id_proof_type,
+                    number: formData.id_proof_number
                 }
             });
             alert('Volunteer details updated successfully!');
@@ -31,7 +40,8 @@ const VolunteerExpandableRow = ({ volunteer, onUpdate, onClose }) => {
             setEditing(false);
         } catch (err) {
             console.error('Failed to update volunteer:', err);
-            alert('Failed to update volunteer details');
+            const msg = err.response?.data?.detail || 'Failed to update volunteer details';
+            alert(msg);
         } finally {
             setSaving(false);
         }
@@ -178,7 +188,7 @@ const VolunteerExpandableRow = ({ volunteer, onUpdate, onClose }) => {
                                 />
                             ) : (
                                 <div style={{ padding: '0.65rem', background: 'white', borderRadius: '8px', fontSize: '0.9rem', fontWeight: '600', color: '#111827', border: '1px solid #e5e7eb' }}>
-                                    {volunteer.pre_screening.name}
+                                    {volunteer.basic_info?.name || volunteer.pre_screening?.name || volunteer.name || 'N/A'}
                                 </div>
                             )}
                         </div>
@@ -204,7 +214,7 @@ const VolunteerExpandableRow = ({ volunteer, onUpdate, onClose }) => {
                                 />
                             ) : (
                                 <div style={{ padding: '0.65rem', background: 'white', borderRadius: '8px', fontSize: '0.9rem', fontWeight: '600', color: '#111827', border: '1px solid #e5e7eb' }}>
-                                    {volunteer.pre_screening.contact || 'N/A'}
+                                    {volunteer.basic_info?.contact || volunteer.pre_screening?.contact || volunteer.phone || volunteer.mobile || 'N/A'}
                                 </div>
                             )}
                         </div>
@@ -230,7 +240,7 @@ const VolunteerExpandableRow = ({ volunteer, onUpdate, onClose }) => {
                                 />
                             ) : (
                                 <div style={{ padding: '0.65rem', background: 'white', borderRadius: '8px', fontSize: '0.9rem', fontWeight: '600', color: '#111827', border: '1px solid #e5e7eb' }}>
-                                    {volunteer.pre_screening.location || 'N/A'}
+                                    {volunteer.basic_info?.location || volunteer.pre_screening?.location || volunteer.city || 'N/A'}
                                 </div>
                             )}
                         </div>
@@ -256,7 +266,7 @@ const VolunteerExpandableRow = ({ volunteer, onUpdate, onClose }) => {
                                 />
                             ) : (
                                 <div style={{ padding: '0.65rem', background: 'white', borderRadius: '8px', fontSize: '0.9rem', fontWeight: '600', color: '#111827', border: '1px solid #e5e7eb' }}>
-                                    {volunteer.pre_screening.age || 'N/A'}
+                                    {volunteer.basic_info?.age || volunteer.pre_screening?.age || volunteer.age || 'N/A'}
                                 </div>
                             )}
                         </div>
@@ -284,7 +294,66 @@ const VolunteerExpandableRow = ({ volunteer, onUpdate, onClose }) => {
                                 />
                             ) : (
                                 <div style={{ padding: '0.65rem', background: 'white', borderRadius: '8px', fontSize: '0.9rem', fontWeight: '600', color: '#111827', border: '1px solid #e5e7eb' }}>
-                                    {volunteer.pre_screening.address || 'N/A'}
+                                    {volunteer.basic_info?.address || volunteer.pre_screening?.address || volunteer.address || 'N/A'}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* ID Proof Type */}
+                        <div>
+                            <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#6b7280', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <BadgeInfo size={14} /> ID Proof Type
+                            </label>
+                            {editing ? (
+                                <select
+                                    value={formData.id_proof_type}
+                                    onChange={(e) => setFormData({ ...formData, id_proof_type: e.target.value })}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.65rem',
+                                        borderRadius: '8px',
+                                        border: '2px solid #e5e7eb',
+                                        fontSize: '0.9rem',
+                                        fontWeight: '600',
+                                        background: 'white'
+                                    }}
+                                >
+                                    <option value="">Select Type</option>
+                                    <option value="Aadhaar Card">Aadhaar Card</option>
+                                    <option value="PAN Card">PAN Card</option>
+                                    <option value="Voter ID">Voter ID</option>
+                                    <option value="Driving License">Driving License</option>
+                                </select>
+                            ) : (
+                                <div style={{ padding: '0.65rem', background: 'white', borderRadius: '8px', fontSize: '0.9rem', fontWeight: '600', color: '#111827', border: '1px solid #e5e7eb' }}>
+                                    {volunteer.id_proof_type || 'N/A'}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* ID Proof Number */}
+                        <div>
+                            <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#6b7280', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <CreditCard size={14} /> ID Number
+                            </label>
+                            {editing ? (
+                                <input
+                                    type="text"
+                                    value={formData.id_proof_number}
+                                    onChange={(e) => setFormData({ ...formData, id_proof_number: e.target.value.toUpperCase() })}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.65rem',
+                                        borderRadius: '8px',
+                                        border: '2px solid #e5e7eb',
+                                        fontSize: '0.9rem',
+                                        fontWeight: '600'
+                                    }}
+                                    placeholder="Enter ID Number"
+                                />
+                            ) : (
+                                <div style={{ padding: '0.65rem', background: 'white', borderRadius: '8px', fontSize: '0.9rem', fontWeight: '600', color: '#111827', border: '1px solid #e5e7eb' }}>
+                                    {volunteer.id_proof_number || 'N/A'}
                                 </div>
                             )}
                         </div>
@@ -347,7 +416,7 @@ const VolunteerList = () => {
                 ...(filters.gender && { gender: filters.gender }),
                 ...(search && { search: search })
             });
-            const response = await api.get(`/dashboard/volunteers?${params}`);
+            const response = await api.get(`/admin/dashboard/volunteers?${params}`);
             setVolunteers(response.data.volunteers);
             setTotal(response.data.total);
         } catch (err) {
@@ -488,12 +557,12 @@ const VolunteerList = () => {
                                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{vol.volunteer_id}</div>
                                                 {vol.legacy_id && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Legacy: {vol.legacy_id}</div>}
                                             </td>
-                                            <td style={{ fontWeight: '600', color: '#1e293b' }}>{vol.pre_screening.name}</td>
-                                            <td style={{ color: 'var(--text-muted)' }}>{vol.pre_screening.contact || 'N/A'}</td>
+                                            <td style={{ fontWeight: '600', color: '#1e293b' }}>{vol.basic_info?.name || vol.pre_screening?.name || vol.name || 'N/A'}</td>
+                                            <td style={{ color: 'var(--text-muted)' }}>{vol.basic_info?.contact || vol.pre_screening?.contact || vol.phone || vol.mobile || 'N/A'}</td>
                                             <td style={{ textTransform: 'capitalize' }}>
                                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                                                    {vol.pre_screening.gender === 'male' ? '👨' : vol.pre_screening.gender === 'female' ? '👩' : '👤'}
-                                                    {vol.pre_screening.gender}
+                                                    {(vol.basic_info?.gender || vol.pre_screening?.gender || vol.gender) === 'male' ? '👨' : (vol.basic_info?.gender || vol.pre_screening?.gender || vol.gender) === 'female' ? '👩' : '👤'}
+                                                    {vol.basic_info?.gender || vol.pre_screening?.gender || vol.gender || 'N/A'}
                                                 </span>
                                             </td>
                                             <td>

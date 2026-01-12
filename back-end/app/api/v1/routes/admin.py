@@ -148,12 +148,18 @@ async def get_dashboard_volunteers(
         if status:
             query["status"] = status
         if gender:
-            query[" pre_screening.gender"] = gender
+            query["$or"] = [
+                {"pre_screening.gender": gender},
+                {"basic_info.gender": gender}
+            ]
         if search:
             query["$or"] = [
                 {"volunteer_id": {"$regex": search, "$options": "i"}},
                 {"subject_code": {"$regex": search, "$options": "i"}},
                 {"pre_screening.name": {"$regex": search, "$options": "i"}},
+                {"pre_screening.contact": {"$regex": search, "$options": "i"}},
+                {"basic_info.name": {"$regex": search, "$options": "i"}},
+                {"basic_info.contact": {"$regex": search, "$options": "i"}}
             ]
         
         # Get total count
@@ -192,29 +198,94 @@ async def update_volunteer_details(
         if not volunteer:
             raise HTTPException(404, f"Volunteer {volunteer_id} not found")
         
-        # Update only the pre_screening fields that were provided
-        if "pre_screening" in update_data:
-            update_fields = {}
-            allowed_fields = ["name", "contact", "location", "age", "address", "email"]
+        update_fields = {}
+        
+        # Check if we should update basic_info (legacy) or pre_screening (new)
+        if volunteer.get("basic_info"):
+             # Legacy schema - update basic_info
+             if "pre_screening" in update_data:
+                data = update_data["pre_screening"]
+                if "name" in data: update_fields["basic_info.name"] = data["name"]
+                if "contact" in data: update_fields["basic_info.contact"] = data["contact"]
+                if "address" in data: update_fields["basic_info.address"] = data["address"]
+                # Map location to address or generic field if needed, or ignore if no mapping
+                if "location" in data: update_fields["basic_info.location"] = data["location"] 
+                # Age is derived from DOB in legacy, but we can store it if provided or ignore
+        else:
+            # New schema - update pre_screening
+            if "pre_screening" in update_data:
+                allowed_fields = ["name", "contact", "location", "age", "address", "email"]
+                for field, value in update_data["pre_screening"].items():
+                    if field in allowed_fields:
+                        update_fields[f"pre_screening.{field}"] = value
+        
+        # Update ID Proof details if provided
+        if "id_proof" in update_data:
+            id_data = update_data["id_proof"]
+            id_type = id_data.get("type")
+            id_number = id_data.get("number")
             
-            for field, value in update_data["pre_screening"].items():
-                if field in allowed_fields:
-                    update_fields[f"pre_screening.{field}"] = value
-            
-            if update_fields:
-                result = await volunteers_collection.update_one(
-                    {"volunteer_id": volunteer_id},
-                    {"$set": update_fields}
-                )
+            if id_type and id_number:
+                # Validate
+                from app.core.validators import validate_id
+                if not validate_id(id_type, id_number):
+                    raise HTTPException(400, f"Invalid {id_type} format")
                 
-                if result.modified_count > 0:
-                    return {"success": True, "message": "Volunteer updated successfully"}
-                else:
-                    return {"success": True, "message": "No changes made"}
+                update_fields["id_proof_type"] = id_type
+                update_fields["id_proof_number"] = id_number
+        
+        if update_fields:
+            result = await volunteers_collection.update_one(
+                {"volunteer_id": volunteer_id},
+                {"$set": update_fields}
+            )
+            
+            if result.modified_count > 0:
+                return {"success": True, "message": "Volunteer updated successfully"}
+            else:
+                return {"success": True, "message": "No changes made"}
         
         return {"success": False, "message": "No valid update data provided"}
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(500, f"Failed to update volunteer: {str(e)}")
+
+
+@router.delete("/dashboard/volunteers/{volunteer_id}")
+async def delete_volunteer(
+    volunteer_id: str,
+    current_user: dict = Depends(deps.get_current_user),
+):
+    """
+    Delete a volunteer from pre-screening stage.
+    Only pre-screening volunteers can be deleted for data safety.
+    """
+    try:
+        volunteers_collection = db["volunteers_master"]
+        
+        # Find volunteer
+        volunteer = await volunteers_collection.find_one({"volunteer_id": volunteer_id})
+        if not volunteer:
+            raise HTTPException(404, f"Volunteer {volunteer_id} not found")
+        
+        # Only allow deletion of pre-screening stage volunteers
+        if volunteer.get("stage") != "pre-screening":
+            raise HTTPException(
+                400, 
+                f"Cannot delete volunteer in {volunteer.get('stage')} stage. Only pre-screening volunteers can be deleted."
+            )
+        
+        # Delete the volunteer
+        result = await volunteers_collection.delete_one({"volunteer_id": volunteer_id})
+        
+        if result.deleted_count > 0:
+            return {"success": True, "message": f"Volunteer {volunteer_id} deleted successfully"}
+        else:
+            raise HTTPException(500, "Failed to delete volunteer")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Failed to delete volunteer: {str(e)}")
 

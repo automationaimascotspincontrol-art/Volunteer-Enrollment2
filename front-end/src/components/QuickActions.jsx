@@ -141,7 +141,7 @@ const QuickActions = ({ role }) => {
                     description="Find and complete registrations"
                 />
                 <QuickActionTile
-                    to="/admin/volunteers"
+                    to="/admin/full-search"
                     icon={Database}
                     label="Full Database"
                     color="var(--secondary)"
