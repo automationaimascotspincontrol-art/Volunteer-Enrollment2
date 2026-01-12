@@ -210,7 +210,8 @@ async def update_volunteer_details(
                 if "address" in data: update_fields["basic_info.address"] = data["address"]
                 # Map location to address or generic field if needed, or ignore if no mapping
                 if "location" in data: update_fields["basic_info.location"] = data["location"] 
-                # Age is derived from DOB in legacy, but we can store it if provided or ignore
+                # Allow age update for legacy
+                if "age" in data: update_fields["basic_info.age"] = data["age"]
         else:
             # New schema - update pre_screening
             if "pre_screening" in update_data:
@@ -288,4 +289,3 @@ async def delete_volunteer(
         raise
     except Exception as e:
         raise HTTPException(500, f"Failed to delete volunteer: {str(e)}")
-
