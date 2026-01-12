@@ -147,30 +147,80 @@ async def get_pre_registration_volunteers(current_user: dict = Depends(get_curre
 
 @router.get("/approved")
 async def get_approved_volunteers(
-    study_id: Optional[str] = Query(None, description="Filter by Study Instance ID"),
+    study_id: Optional[str] = Query(None, description="Filter by Study Instance ID or SCHEDULED_TODAY or ACTIVE_STUDIES"),
     current_user: dict = Depends(get_current_user)
 ):
     """
     Get list of approved volunteers with attendance status.
     Optionally filter by study_id to see only volunteers assigned to that study.
+    Special study_id 'SCHEDULED_TODAY' returns volunteers with visits today.
+    Special study_id 'ACTIVE_STUDIES' returns all volunteers assigned to any study.
     """
     try:
         query = {
             "current_stage": "registered",
             "current_status": "approved"
         }
+        
+        visit_map = {} # {volunteer_id: {label: "T1", code: "S-101"}}
 
         # If filtered by study, get assigned volunteer IDs first
         if study_id:
-            assigned_vols = await AssignedStudy.find(
-                {"study_id": study_id}
-            ).to_list()
+            assigned_ids = []
             
-            # Extract list of volunteer IDs assigned to this study
-            assigned_ids = [a.volunteer_id for a in assigned_vols]
+            if study_id == "SCHEDULED_TODAY":
+                 # 1. Find visits happening TODAY
+                 today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+                 today_end = datetime.now(timezone.utc).replace(hour=23, minute=59, second=59, microsecond=999999)
+                 
+                 # Query study_visits for today
+                 today_visits = await db.study_visits.find({
+                     "plannedDate": {"$gte": today_start, "$lte": today_end}
+                 }).to_list(2000)
+                 
+                 # 2. Get Study Instances involved
+                 # Map instance_id (+ date/label logic if needed) -> properties
+                 # We want to associate the visit label to the study
+                 inst_visit_map = {str(v["studyInstanceId"]): v.get("visitLabel", "Visit") for v in today_visits if "studyInstanceId" in v}
+                 instance_ids = list(inst_visit_map.keys())
+                 
+                 if instance_ids:
+                     # 3. Find Volunteers assigned to these studies
+                     assigned_vols = await AssignedStudy.find(
+                         {"study_id": {"$in": instance_ids}, "status": "assigned"}
+                     ).to_list()
+                     
+                     for a in assigned_vols:
+                         assigned_ids.append(a.volunteer_id)
+                         # Store visit info for this volunteer
+                         visit_map[a.volunteer_id] = {
+                             "label": inst_visit_map.get(a.study_id, "Visit"),
+                             "study_code": a.study_code
+                         }
+                         
+            elif study_id == "ACTIVE_STUDIES":
+                 # Find ALL volunteers currently assigned to ANY study
+                 assigned_vols = await AssignedStudy.find(
+                     {"status": "assigned"}
+                 ).to_list()
+                 
+                 assigned_ids = [a.volunteer_id for a in assigned_vols]
+                 
+                 # Optimization: Map study codes for context
+                 for a in assigned_vols:
+                     visit_map[a.volunteer_id] = {
+                         "label": "Ongoing",
+                         "study_code": a.study_code
+                     }
+            else:
+                # Normal single study filter
+                assigned_vols = await AssignedStudy.find(
+                    {"study_id": study_id, "status": "assigned"}
+                ).to_list()
+                assigned_ids = [a.volunteer_id for a in assigned_vols]
             
             if not assigned_ids:
-                return [] # Return empty if no one is assigned to this study
+                return [] # Return empty if no one matches
                 
             query["volunteer_id"] = {"$in": assigned_ids}
 
@@ -188,6 +238,9 @@ async def get_approved_volunteers(
                 "is_active": True
             })
             
+            # Helper to get visit info if available
+            v_info = visit_map.get(volunteer_id)
+            
             result.append({
                 "id": vol_id,
                 "volunteer_id": volunteer_id,
@@ -198,11 +251,17 @@ async def get_approved_volunteers(
                 "attendance_status": "IN" if attendance else "OUT",
                 "check_in_time": attendance.get("check_in_time") if attendance else None,
                 "last_check_out": vol.get("last_check_out"),
-                "approval_date": vol.get("approval_date")
+                "approval_date": vol.get("approval_date"),
+                "scheduled_visit": v_info["label"] if v_info else None,
+                "scheduled_study": v_info["study_code"] if v_info else None
             })
         
-        # Sort: Active ("IN") first, then by name
-        result.sort(key=lambda x: (x["attendance_status"] == "OUT", x["name"]))
+        # Sort: Active ("IN") first, then Scheduled Today, then by name
+        result.sort(key=lambda x: (
+            x["attendance_status"] == "OUT", 
+            x["scheduled_visit"] is None, 
+            x["name"]
+        ))
         
         return result
     except Exception as e:

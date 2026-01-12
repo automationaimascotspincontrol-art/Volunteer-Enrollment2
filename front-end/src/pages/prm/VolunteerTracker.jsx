@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Users, CheckCircle, Clock, Activity, RefreshCw, XCircle, ScanBarcode, ListCheck, Filter, CheckSquare, Square, Search } from 'lucide-react';
+import { Users, CheckCircle, Clock, Activity, RefreshCw, XCircle, ScanBarcode, ListCheck, Filter, CheckSquare, Square, Search, Calendar, CalendarClock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const StatCard = ({ title, value, subtitle, icon: Icon, colorVar, onClick }) => (
@@ -251,6 +251,13 @@ const VolunteerTracker = () => {
         );
     }
 
+    const getListTitle = () => {
+        if (selectedStudy === 'SCHEDULED_TODAY') return "Today's Schedule";
+        if (selectedStudy === 'ACTIVE_STUDIES') return "Active Studies Roster";
+        if (selectedStudy) return 'Study Roster';
+        return 'Approved Volunteers';
+    }
+
     return (
         <div className="animate-fade-in" style={{ paddingBottom: '5rem' }}>
             {/* Header & Rapid Entry */}
@@ -291,6 +298,9 @@ const VolunteerTracker = () => {
                             }}
                         >
                             <option value="">All Approved Volunteers</option>
+                            <option value="SCHEDULED_TODAY">📅 Today's Scheduled Visits</option>
+                            <option value="ACTIVE_STUDIES">⚡ All Ongoing/Active Studies</option>
+                            <hr />
                             {studies.map(s => (
                                 <option key={s._id} value={s._id}>
                                     {s.studyCode} - {s.studyName}
@@ -368,7 +378,7 @@ const VolunteerTracker = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <h3 style={{ fontSize: '1.3rem', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <ListCheck size={22} color="var(--success)" />
-                            {selectedStudy ? 'Study Roster' : 'Approved Volunteers'} ({filteredApproved.length})
+                            {getListTitle()} ({filteredApproved.length})
                         </h3>
                         {selectedVolunteers.length > 0 && (
                             <span style={{
@@ -439,7 +449,37 @@ const VolunteerTracker = () => {
                                             />
                                         </td>
                                         <td style={{ fontWeight: '600' }}>
-                                            {vol.name}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                {vol.name}
+                                                {vol.scheduled_visit && (
+                                                    <span style={{
+                                                        background: '#e0f2fe',
+                                                        color: '#0284c7',
+                                                        padding: '0.1rem 0.5rem',
+                                                        borderRadius: '12px',
+                                                        fontSize: '0.7rem',
+                                                        border: '1px solid #bae6fd',
+                                                        display: 'flex', alignItems: 'center', gap: '0.3rem'
+                                                    }}>
+                                                        <CalendarClock size={12} />
+                                                        {vol.scheduled_study ? `${vol.scheduled_study}: ` : ''}{vol.scheduled_visit}
+                                                    </span>
+                                                )}
+                                                {selectedStudy === 'ACTIVE_STUDIES' && !vol.scheduled_visit && vol.scheduled_study && (
+                                                    <span style={{
+                                                        background: '#f0fdf4',
+                                                        color: '#15803d',
+                                                        padding: '0.1rem 0.5rem',
+                                                        borderRadius: '12px',
+                                                        fontSize: '0.7rem',
+                                                        border: '1px solid #bbf7d0',
+                                                        display: 'flex', alignItems: 'center', gap: '0.3rem'
+                                                    }}>
+                                                        <Activity size={12} />
+                                                        {vol.scheduled_study} (Active)
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '400' }}>{vol.volunteer_id}</div>
                                         </td>
                                         <td className="text-muted">{vol.contact}</td>
