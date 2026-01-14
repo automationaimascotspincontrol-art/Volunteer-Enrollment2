@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Search, UserPlus, LogOut, Shield, Menu, X, Calendar, PlusCircle, Users } from 'lucide-react';
+import { LayoutDashboard, Search, UserPlus, LogOut, Shield, Menu, X, Calendar, PlusCircle, Users, Settings } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ThemeToggle from '../../theme/ThemeToggle';
 import mascotLogo from '../../assets/mascot_logo.png';
@@ -192,25 +192,52 @@ const Topbar = () => {
                                 <span>Assigned Studies</span>
                             </NavLink>
 
-                            <NavLink
-                                to="/prm/volunteers"
-                                style={({ isActive }) => ({
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    padding: '0.6rem 1rem',
-                                    borderRadius: '10px',
-                                    textDecoration: 'none',
-                                    fontWeight: '600',
-                                    fontSize: '0.95rem',
-                                    transition: 'all 0.2s',
-                                    background: isActive ? 'var(--bg-panel)' : 'transparent',
-                                    color: isActive ? 'var(--primary)' : 'var(--text-muted)'
-                                })}
-                            >
-                                <Users size={18} />
-                                <span>SBoard</span>
-                            </NavLink>
+
+                            {/* SBoard for Recruiters */}
+                            {user?.role === 'recruiter' && (
+                                <NavLink
+                                    to="/prm/volunteers"
+                                    style={({ isActive }) => ({
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        padding: '0.6rem 1rem',
+                                        borderRadius: '10px',
+                                        textDecoration: 'none',
+                                        fontWeight: '600',
+                                        fontSize: '0.95rem',
+                                        transition: 'all 0.2s',
+                                        background: isActive ? 'var(--bg-panel)' : 'transparent',
+                                        color: isActive ? 'var(--primary)' : 'var(--text-muted)'
+                                    })}
+                                >
+                                    <Users size={18} />
+                                    <span>SBoard</span>
+                                </NavLink>
+                            )}
+
+                            {/* User Management - Game Master Only */}
+                            {user?.role === 'game_master' && (
+                                <NavLink
+                                    to="/admin/users"
+                                    style={({ isActive }) => ({
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        padding: '0.6rem 1rem',
+                                        borderRadius: '10px',
+                                        textDecoration: 'none',
+                                        fontWeight: '600',
+                                        fontSize: '0.95rem',
+                                        transition: 'all 0.2s',
+                                        background: isActive ? 'var(--bg-panel)' : 'transparent',
+                                        color: isActive ? 'var(--primary)' : 'var(--text-muted)'
+                                    })}
+                                >
+                                    <Settings size={18} />
+                                    <span>User Manager</span>
+                                </NavLink>
+                            )}
                         </>
                     )}
 
@@ -304,9 +331,6 @@ const Topbar = () => {
 
                 {/* Right Side - User Info & Mobile Menu Toggle */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ marginRight: '0.5rem' }}>
-                        {user?.role === 'game_master' && <ThemeToggle />}
-                    </div>
                     {/* Desktop Information - Visible on medium screens and up */}
                     <div className="desktop-user-info" style={{
                         display: 'none',
@@ -505,26 +529,54 @@ const Topbar = () => {
                                     <span>Recent Enrollment</span>
                                 </NavLink>
 
-                                <NavLink
-                                    to="/prm/volunteers"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.75rem',
-                                        padding: '0.875rem 1rem',
-                                        borderRadius: '10px',
-                                        textDecoration: 'none',
-                                        fontWeight: '600',
-                                        fontSize: '0.95rem',
-                                        background: 'transparent',
-                                        color: 'var(--text-primary)',
-                                        border: '1px solid var(--border-color)'
-                                    }}
-                                >
-                                    <Users size={20} />
-                                    <span>SBoard</span>
-                                </NavLink>
+
+                                {/* SBoard for Recruiters */}
+                                {user?.role === 'recruiter' && (
+                                    <NavLink
+                                        to="/prm/volunteers"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.75rem',
+                                            padding: '0.875rem 1rem',
+                                            borderRadius: '10px',
+                                            textDecoration: 'none',
+                                            fontWeight: '600',
+                                            fontSize: '0.95rem',
+                                            background: 'transparent',
+                                            color: 'var(--text-primary)',
+                                            border: '1px solid var(--border-color)'
+                                        }}
+                                    >
+                                        <Users size={20} />
+                                        <span>SBoard</span>
+                                    </NavLink>
+                                )}
+
+                                {/* User Management - Game Master Only */}
+                                {user?.role === 'game_master' && (
+                                    <NavLink
+                                        to="/admin/users"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.75rem',
+                                            padding: '0.875rem 1rem',
+                                            borderRadius: '10px',
+                                            textDecoration: 'none',
+                                            fontWeight: '600',
+                                            fontSize: '0.95rem',
+                                            background: 'transparent',
+                                            color: 'var(--text-primary)',
+                                            border: '1px solid var(--border-color)'
+                                        }}
+                                    >
+                                        <Settings size={20} />
+                                        <span>User Manager</span>
+                                    </NavLink>
+                                )}
                             </>
                         )}
 

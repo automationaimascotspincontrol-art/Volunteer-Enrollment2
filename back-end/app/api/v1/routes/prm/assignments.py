@@ -200,6 +200,147 @@ async def export_study_specific(
         logger.error(f"Error exporting study {study_code}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
 
+@router.post("/assigned-studies")
+async def create_volunteer_assignment(
+    payload: Dict[str, Any] = Body(...),
+    user: UserBase = Depends(get_current_user)
+):
+    """
+    Assign a volunteer to a study with automatic washout period calculation.
+    Validates volunteer is not in washout period from another study.
+    """
+    volunteer_id = payload.get("volunteer_id")
+    study_code = payload.get("study_code")
+    
+    if not volunteer_id or not study_code:
+        raise HTTPException(status_code=400, detail="volunteer_id and study_code are required")
+    
+    # Check if volunteer is currently in washout period
+    today = datetime.now()
+    existing_washout = await AssignedStudy.find_one({
+        "volunteer_id": volunteer_id,
+        "washout_end_date": {"$gte": today}
+    })
+    
+    if existing_washout:
+        washout_end = existing_washout.washout_end_date.strftime("%Y-%m-%d")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Volunteer is in washout period until {washout_end} from study {existing_washout.study_code}"
+        )
+    
+    # Get study details to calculate washout
+    study_instance = await db.study_instances.find_one({
+        "$or": [
+            {"enteredStudyCode": study_code},
+            {"studyInstanceCode": study_code}
+        ]
+    })
+    
+    if not study_instance:
+        raise HTTPException(status_code=404, detail=f"Study {study_code} not found")
+    
+    # Calculate washout end date from study's DRT date
+    washout_end_date = None
+    washout_days = None
+    
+    if study_instance.get("drtWashoutDate"):
+        try:
+            from datetime import datetime as dt
+            drt_date_raw = study_instance["drtWashoutDate"]
+            
+            if isinstance(drt_date_raw, datetime):
+                washout_end_date = drt_date_raw
+            elif isinstance(drt_date_raw, str):
+                washout_end_date = dt.fromisoformat(drt_date_raw.replace("Z", ""))
+            
+            # Calculate days from now
+            if washout_end_date:
+                washout_days = (washout_end_date - today).days
+        except Exception as e:
+            logger.warning(f"Could not calculate washout from DRT: {str(e)}")
+    
+    # Get volunteer details from database
+    volunteer = await db.volunteers.find_one({"volunteerId": volunteer_id})
+    if not volunteer:
+        raise HTTPException(status_code=404, detail=f"Volunteer {volunteer_id} not found")
+    
+    # Create assignment
+    assignment = AssignedStudy(
+        visit_id=payload.get("visit_id", f"AS-{datetime.now().strftime('%Y%m%d%H%M%S')}"),
+        assigned_by=str(user.get("id") or user.get("_id") or "system"),
+        assignment_date=datetime.now(),
+        status="assigned",
+        study_id=str(study_instance.get("_id")),
+        study_code=study_code,
+        study_name=study_instance.get("studyName", "Unknown"),
+        start_date=study_instance.get("startDate"),
+        end_date=study_instance.get("endDate"),
+        volunteer_id=volunteer_id,
+        volunteer_name=volunteer.get("fullName", "Unknown"),
+        volunteer_contact=volunteer.get("contactNumber", ""),
+        volunteer_gender=volunteer.get("gender"),
+        volunteer_dob=volunteer.get("dob"),
+        volunteer_location=volunteer.get("location"),
+        volunteer_address=volunteer.get("address"),
+        fitness_status=payload.get("fitness_status", "pending"),
+        remarks=payload.get("remarks", ""),
+        washout_end_date=washout_end_date,
+        washout_days=washout_days,
+        created_at=datetime.now(),
+        updated_at=datetime.now()
+    )
+    
+    await assignment.insert()
+    
+    return {
+        "success": True,
+        "assignment_id": str(assignment.id),
+        "washout_end_date": washout_end_date.strftime("%Y-%m-%d") if washout_end_date else None,
+        "washout_days": washout_days
+    }
+
+@router.get("/volunteers/{volunteer_id}/availability")
+async def check_volunteer_availability(
+    volunteer_id: str,
+    user: UserBase = Depends(get_current_user)
+):
+    """
+    Check if a volunteer is available (not in washout period).
+    Returns availability status and washout details if applicable.
+    """
+    today = datetime.now()
+    
+    # Check for active washout
+    active_washout = await AssignedStudy.find_one({
+        "volunteer_id": volunteer_id,
+        "washout_end_date": {"$gte": today}
+    })
+    
+    if active_washout:
+        days_remaining = (active_washout.washout_end_date - today).days
+        return {
+            "available": False,
+            "in_washout": True,
+            "washout_end_date": active_washout.washout_end_date.strftime("%Y-%m-%d"),
+            "days_remaining": days_remaining,
+            "current_study": active_washout.study_code,
+            "current_study_name": active_washout.study_name
+        }
+    
+    # Check recent assignments
+    recent_assignments = await AssignedStudy.find({
+        "volunteer_id": volunteer_id
+    }).sort("-created_at").limit(5).to_list()
+    
+    return {
+        "available": True,
+        "in_washout": False,
+        "last_study": recent_assignments[0].study_code if recent_assignments else None,
+        "last_assignment_date": recent_assignments[0].created_at.strftime("%Y-%m-%d") if recent_assignments else None,
+        "total_studies_completed": len(recent_assignments)
+    }
+
 @router.patch("/assigned-studies/{assignment_id}")
 async def update_assigned_study_status(
     assignment_id: str,
@@ -208,6 +349,7 @@ async def update_assigned_study_status(
 ):
     """
     Update status, remarks, or visit date of an assigned study.
+    Automatically sets washout when study is marked as completed.
     """
     try:
         oid = PydanticObjectId(assignment_id)
@@ -238,6 +380,32 @@ async def update_assigned_study_status(
         assignment = await AssignedStudy.find_one(AssignedStudy.id == oid)
         if not assignment:
             raise HTTPException(status_code=404, detail="Assignment not found")
+        
+        # If marking as completed, apply washout if not already set
+        if status == "completed" and not assignment.washout_end_date:
+            # Get study DRT date to set washout
+            study = await db.study_instances.find_one({
+                "$or": [
+                    {"enteredStudyCode": assignment.study_code},
+                    {"studyInstanceCode": assignment.study_code}
+                ]
+            })
+            
+            if study and study.get("drtWashoutDate"):
+                try:
+                    from datetime import datetime as dt
+                    drt_date_raw = study["drtWashoutDate"]
+                    
+                    if isinstance(drt_date_raw, datetime):
+                        update_dict["washout_end_date"] = drt_date_raw
+                    elif isinstance(drt_date_raw, str):
+                        update_dict["washout_end_date"] = dt.fromisoformat(drt_date_raw.replace("Z", ""))
+                    
+                    if update_dict.get("washout_end_date"):
+                        today = datetime.now()
+                        update_dict["washout_days"] = (update_dict["washout_end_date"] - today).days
+                except Exception as e:
+                    logger.warning(f"Could not set washout on completion: {str(e)}")
             
         await assignment.update({"$set": update_dict})
         

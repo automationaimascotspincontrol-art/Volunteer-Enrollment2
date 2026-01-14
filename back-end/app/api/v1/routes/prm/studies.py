@@ -59,6 +59,111 @@ async def create_study_instance(
     if not instance_data:
         raise HTTPException(status_code=400, detail="Missing studyInstance data")
 
+    # ====== COMPREHENSIVE BACKEND VALIDATION ======
+    validation_errors = []
+
+    # 1. Study Code Validation & Uniqueness Check
+    study_code = instance_data.get("enteredStudyCode") or instance_data.get("studyInstanceCode")
+    if not study_code or len(study_code.strip()) < 3:
+        validation_errors.append("Study code must be at least 3 characters")
+    else:
+        # Check uniqueness
+        existing = await db.study_instances.find_one({
+            "$or": [
+                {"enteredStudyCode": study_code},
+                {"studyInstanceCode": study_code}
+            ]
+        })
+        if existing:
+            validation_errors.append(f"Study code '{study_code}' already exists. Please use a unique code.")
+
+    # 2. Volunteer Count Validation
+    volunteers_planned = instance_data.get("volunteersPlanned")
+    if not volunteers_planned or volunteers_planned <= 0:
+        validation_errors.append("Volunteers planned must be greater than 0")
+    elif volunteers_planned > 1000:
+        validation_errors.append("Volunteers planned exceeds maximum (1000)")
+
+    # 3. Gender Ratio Validation
+    gender_ratio = instance_data.get("genderRatio", {})
+    if gender_ratio:
+        total = gender_ratio.get("female", 0) + gender_ratio.get("male", 0) + gender_ratio.get("minor", 0)
+        if total != 100:
+            validation_errors.append(f"Gender ratio must total 100% (currently {total}%)")
+    
+    # 4. Age Range Validation
+    age_range = instance_data.get("ageRange", {})
+    if age_range:
+        age_from = age_range.get("from")
+        age_to = age_range.get("to")
+        if age_from is None or age_to is None:
+            validation_errors.append("Age range must be specified")
+        elif age_from < 0 or age_to < 0:
+            validation_errors.append("Age range cannot be negative")
+        elif age_from >= age_to:
+            validation_errors.append(f"Age 'from' ({age_from}) must be less than 'to' ({age_to})")
+
+    # 5. Date Validation
+    start_date_str = instance_data.get("startDate")
+    if start_date_str:
+        try:
+            start_date_obj = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            
+            # Check DRT date logic
+            drt_date_str = instance_data.get("drtWashoutDate")
+            if drt_date_str:
+                try:
+                    drt_date_obj = datetime.strptime(drt_date_str, "%Y-%m-%d").date()
+                    if drt_date_obj < start_date_obj:
+                        validation_errors.append("DRT washout date cannot be before study start date")
+                except:
+                    validation_errors.append("Invalid DRT washout date format")
+                    
+        except ValueError:
+            validation_errors.append("Invalid start date format")
+
+    # 6. Conflict Detection - Check for overlapping studies
+    if start_date_str and visits_data:
+        try:
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+            # Get last visit date
+            last_visit_date = start_date
+            for visit in visits_data:
+                visit_date_str = visit.get("plannedDate")
+                if visit_date_str:
+                    try:
+                        if isinstance(visit_date_str, str):
+                            visit_date = datetime.fromisoformat(visit_date_str.replace("Z", ""))
+                        else:
+                            visit_date = visit_date_str
+                        if visit_date > last_visit_date:
+                            last_visit_date = visit_date
+                    except:
+                        pass
+            
+            # Check for overlapping studies (same dates, same volunteers requirement)
+            overlapping = await db.study_instances.find({
+                "startDate": {"$lte": last_visit_date.strftime("%Y-%m-%d")},
+                "$or": [
+                    {"status": {"$in": ["UPCOMING", "ONGOING", "upcoming", "ongoing"]}},
+                    {"status": {"$exists": False}}
+                ]
+            }).to_list(100)
+            
+            if len(overlapping) > 5:  # Soft warning threshold
+                logger.warning(f"High number of overlapping studies: {len(overlapping)}")
+                
+        except Exception as e:
+            logger.warning(f"Conflict check error: {str(e)}")
+
+    # Return validation errors if any
+    if validation_errors:
+        raise HTTPException(
+            status_code=400, 
+            detail=" • ".join(validation_errors)
+        )
+
+    # ====== PROCEED WITH CREATION ======
     # Add metadata
     user_id = str(user.get("id") or user.get("_id") or "system")
     instance_data["createdBy"] = user_id

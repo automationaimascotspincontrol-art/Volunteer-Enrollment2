@@ -34,6 +34,10 @@ class AssignedStudy(Document):
     # Clinical Details
     fitness_status: FitnessStatus = FitnessStatus.PENDING # pending, fit, unfit
     remarks: Optional[str] = ""
+    
+    # Washout Period - Individual volunteer washout after study completion
+    washout_end_date: Optional[datetime] = None  # Date until volunteer cannot be reassigned
+    washout_days: Optional[int] = None  # Number of days volunteer must wait
 
     # Audit
     created_at: datetime = datetime.now()

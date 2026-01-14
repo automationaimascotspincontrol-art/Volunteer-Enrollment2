@@ -184,19 +184,101 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
         setError('');
         setLoading(true);
 
+        // ====== COMPREHENSIVE VALIDATION ======
+        const validationErrors = [];
+
+        // 1. Gender Ratio Validation
         const totalGender = formData.genderRatio.female + formData.genderRatio.male + formData.genderRatio.minor;
         if (totalGender !== 100) {
-            setError('Gender ratio must total 100%');
-            setLoading(false);
-            return;
+            validationErrors.push(`Gender ratio must total 100% (currently ${totalGender}%)`);
         }
 
+        // 2. Study Selection Validation
         if (formData.selectedStudies.length === 0) {
-            setError('Please select at least one study type');
+            validationErrors.push('Please select at least one study type');
+        }
+
+        // 3. Volunteer Count Validation
+        const volunteerCount = parseInt(formData.volunteersPlanned);
+        if (!volunteerCount || volunteerCount <= 0) {
+            validationErrors.push('Volunteers planned must be greater than 0');
+        }
+        if (volunteerCount > 1000) {
+            validationErrors.push('Volunteers planned seems too high (max 1000)');
+        }
+
+        // 4. Age Range Validation
+        const ageFrom = parseInt(formData.ageRange.from);
+        const ageTo = parseInt(formData.ageRange.to);
+        if (!ageFrom || !ageTo) {
+            validationErrors.push('Age range must be specified');
+        } else if (ageFrom < 0 || ageTo < 0) {
+            validationErrors.push('Age range cannot be negative');
+        } else if (ageFrom >= ageTo) {
+            validationErrors.push(`Age range invalid: "From" (${ageFrom}) must be less than "To" (${ageTo})`);
+        } else if (ageTo > 120) {
+            validationErrors.push('Age "To" seems unrealistic (max 120)');
+        }
+
+        // 5. Study Code Validation
+        if (!formData.enteredStudyCode || formData.enteredStudyCode.trim().length < 3) {
+            validationErrors.push('Study code must be at least 3 characters');
+        }
+        if (formData.enteredStudyCode && !/^[A-Za-z0-9-_]+$/.test(formData.enteredStudyCode)) {
+            validationErrors.push('Study code can only contain letters, numbers, hyphens, and underscores');
+        }
+
+        // 6. Timeline/Visits Validation
+        for (const study of formData.selectedStudies) {
+            const visits = timelinePreviews[study._id];
+            if (!visits || visits.length === 0) {
+                validationErrors.push(`No timeline generated for "${study.studyName}". Please wait for timeline to load.`);
+            }
+
+            // Check visit dates are in order
+            if (visits && visits.length > 1) {
+                for (let i = 1; i < visits.length; i++) {
+                    const prevDate = new Date(visits[i - 1].plannedDate);
+                    const currDate = new Date(visits[i].plannedDate);
+                    if (currDate <= prevDate) {
+                        validationErrors.push(`Visit dates must be in chronological order for "${study.studyName}"`);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 7. DRT Date Validation (if provided)
+        if (formData.drtWashoutDate) {
+            const drtDate = new Date(formData.drtWashoutDate);
+            const studyStartDate = date ? new Date(date) : (initialData ? new Date(initialData.startDate) : null);
+
+            if (studyStartDate && drtDate < studyStartDate) {
+                validationErrors.push('DRT washout date cannot be before study start date');
+            }
+
+            // Check if DRT is at least after all visits
+            for (const study of formData.selectedStudies) {
+                const visits = timelinePreviews[study._id];
+                if (visits && visits.length > 0) {
+                    const lastVisit = visits[visits.length - 1];
+                    const lastVisitDate = new Date(lastVisit.plannedDate);
+                    if (drtDate < lastVisitDate) {
+                        validationErrors.push('DRT washout date should be after the last study visit');
+                        break;
+                    }
+                }
+            }
+        }
+
+        // If any validation errors, show them and stop
+        if (validationErrors.length > 0) {
+            setError(validationErrors.join(' • '));
             setLoading(false);
             return;
         }
 
+        // ====== PROCEED WITH SUBMISSION ======
         try {
             // Edit Mode Submit
             if (isEdit) {
@@ -267,7 +349,9 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
             }
         } catch (err) {
             console.error("Submit Error:", err);
-            setError(err.message || 'Failed to save study');
+            // Better error message from backend if available
+            const errorMessage = err.response?.data?.detail || err.message || 'Failed to save study';
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }

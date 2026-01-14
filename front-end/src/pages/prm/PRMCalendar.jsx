@@ -770,7 +770,7 @@ const PRMCalendar = () => {
                                     <button
                                         onClick={handleDeleteStudy}
                                         style={{ padding: '6px 12px', background: '#ef4444', borderRadius: '8px', fontWeight: '600', fontSize: '0.85rem', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                                        Permenant Delete
+                                        Permanent Delete
                                     </button>
                                 </div>
                             ) : (

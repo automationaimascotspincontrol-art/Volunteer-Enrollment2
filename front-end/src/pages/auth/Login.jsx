@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { User, Lock, ArrowRight } from 'lucide-react';
-import { Input, Button } from '../../components/ui';
+import { Input, Button, Select } from '../../components/ui';
 import api from '../../api/api';
 import mascotLogo from '../../assets/mascot_logo.png';
 import '../../styles/Login.css';
@@ -10,6 +10,7 @@ import '../../styles/Login.css';
 const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [loginType, setLoginType] = useState('field'); // Default to field visit
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -116,6 +117,20 @@ const Login = () => {
                 )}
 
                 <form onSubmit={handleSubmit} className="login-form">
+                    <Select
+                        label="Login Type"
+                        name="loginType"
+                        value={loginType}
+                        onChange={(e) => setLoginType(e.target.value)}
+                        options={[
+                            { label: 'Field Visit', value: 'field' },
+                            { label: 'Recruiter', value: 'recruiter' },
+                            { label: 'Management', value: 'management' },
+                            { label: 'PRM', value: 'prm' }
+                        ]}
+                        required
+                    />
+
                     <Input
                         label="User ID"
                         name="username"
