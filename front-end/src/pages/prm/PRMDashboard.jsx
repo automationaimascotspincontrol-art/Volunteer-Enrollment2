@@ -136,6 +136,8 @@ const SBoard = () => {
                 axios.get(`http://localhost:8000/api/v1/dashboard/clinical/participation?study_code=${studyCode}`, { headers: { Authorization: `Bearer ${token}` } }),
                 axios.get(`http://localhost:8000/api/v1/dashboard/clinical/analytics?study_code=${studyCode}`, { headers: { Authorization: `Bearer ${token}` } })
             ]);
+            console.log('📊 Analytics Response:', analyticsRes.data);
+            console.log('📋 Participation Response:', participationRes.data);
             setStudyData(participationRes.data);
             setStudyAnalytics(analyticsRes.data);
         } catch (err) {
@@ -387,10 +389,30 @@ const SBoard = () => {
 
                 {/* Premium Stats Cards */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.2rem', marginBottom: '2.5rem' }}>
-                    <StatCard title="Total Participants" value={studyAnalytics?.total_participants || 0} icon={Users} colorVar="--chart-blue" />
-                    <StatCard title="Approved" value={studyAnalytics?.approved || 0} icon={CheckCircle} colorVar="--success" />
-                    <StatCard title="Rejected" value={studyAnalytics?.rejected || 0} icon={Activity} colorVar="--secondary" />
-                    <StatCard title="Pending" value={studyAnalytics?.pending || 0} icon={Clock} colorVar="--accent" />
+                    <StatCard
+                        title="Total Participants"
+                        value={studyAnalytics?.total_participants || 0}
+                        icon={Users}
+                        colorVar="--chart-blue"
+                    />
+                    <StatCard
+                        title="Approved"
+                        value={studyAnalytics?.charts?.status?.find(s => s.name === 'approved')?.value || 0}
+                        icon={CheckCircle}
+                        colorVar="--success"
+                    />
+                    <StatCard
+                        title="Rejected"
+                        value={studyAnalytics?.charts?.status?.find(s => s.name === 'rejected')?.value || 0}
+                        icon={Activity}
+                        colorVar="--secondary"
+                    />
+                    <StatCard
+                        title="Pending"
+                        value={studyAnalytics?.charts?.status?.find(s => s.name === 'pending')?.value || 0}
+                        icon={Clock}
+                        colorVar="--accent"
+                    />
                 </div>
 
                 {/* Volunteer List - Enhanced */}
