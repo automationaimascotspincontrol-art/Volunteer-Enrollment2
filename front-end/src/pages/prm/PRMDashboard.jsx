@@ -289,116 +289,287 @@ const SBoard = () => {
     if (id) {
         return (
             <div className="s-board animate-fade-in">
-                <div className="dashboard-header">
-                    <div className="flex items-center gap-4" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <button onClick={() => navigate('/prm/calendar')} className="btn btn-outline" style={{ padding: '0.5rem' }}>
-                            <ArrowLeft />
+                {/* Premium Header */}
+                <div style={{
+                    marginBottom: '2.5rem',
+                    padding: '2rem',
+                    background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%)',
+                    borderRadius: '20px',
+                    border: '1px solid rgba(99, 102, 241, 0.15)'
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <button
+                                onClick={() => navigate('/prm/calendar')}
+                                style={{
+                                    padding: '0.75rem',
+                                    background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                                    border: 'none',
+                                    borderRadius: '14px',
+                                    color: 'white',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.35)',
+                                    transition: 'all 0.3s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.transform = 'translateY(-2px)';
+                                    e.target.style.boxShadow = '0 6px 16px rgba(99, 102, 241, 0.45)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.transform = 'translateY(0)';
+                                    e.target.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.35)';
+                                }}
+                            >
+                                <ArrowLeft size={20} />
+                            </button>
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem' }}>
+                                    <h1 style={{
+                                        fontSize: 'clamp(1.6rem, 5vw, 2.2rem)',
+                                        fontWeight: '900',
+                                        margin: 0,
+                                        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                        letterSpacing: '-0.5px'
+                                    }}>
+                                        Study Board
+                                    </h1>
+                                    <span style={{
+                                        fontSize: '1rem',
+                                        fontFamily: 'monospace',
+                                        fontWeight: '700',
+                                        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                                        padding: '0.4rem 0.9rem',
+                                        borderRadius: '10px',
+                                        color: 'white',
+                                        boxShadow: '0 2px 8px rgba(99, 102, 241, 0.3)'
+                                    }}>
+                                        {id}
+                                    </span>
+                                </div>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', margin: 0 }}>
+                                    Detailed enrollment and status analytics
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={downloadReport}
+                            style={{
+                                padding: '0.875rem 1.75rem',
+                                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                                border: 'none',
+                                borderRadius: '14px',
+                                color: 'white',
+                                fontSize: '0.95rem',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                boxShadow: '0 4px 15px rgba(99, 102, 241, 0.35)',
+                                transition: 'all 0.3s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.transform = 'translateY(-2px)';
+                                e.target.style.boxShadow = '0 6px 20px rgba(99, 102, 241, 0.45)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.transform = 'translateY(0)';
+                                e.target.style.boxShadow = '0 4px 15px rgba(99, 102, 241, 0.35)';
+                            }}
+                        >
+                            <FileDown size={18} />
+                            Export Report
                         </button>
-                        <div>
-                            <h1 className="dashboard-title flex items-center gap-2">
-                                Study Board <span style={{ fontSize: '1.2rem', fontFamily: 'monospace', background: 'rgba(99, 102, 241, 0.1)', padding: '0.2rem 0.5rem', borderRadius: '4px', color: 'var(--primary)' }}>{id}</span>
-                            </h1>
-                            <p className="dashboard-subtitle">Detailed enrollment and status analytics</p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={downloadReport}
-                        className="btn btn-primary"
-                    >
-                        <FileDown size={18} />
-                        Export Report
-                    </button>
-                </div>
-
-                {/* Study Specific Stats Cards */}
-                <div className="stats-grid">
-                    <div className="stat-card flex items-center justify-between">
-                        <div>
-                            <p className="text-muted text-sm mb-1">Total Participants</p>
-                            <h3 className="text-2xl font-bold text-white">{studyAnalytics?.total_participants || 0}</h3>
-                        </div>
-                        <div style={{ padding: '0.8rem', background: 'rgba(59, 130, 246, 0.2)', borderRadius: '12px' }}>
-                            <Users className="text-primary" />
-                        </div>
-                    </div>
-                    <div className="stat-card flex items-center justify-between">
-                        <div>
-                            <p className="text-muted text-sm mb-1">Approved</p>
-                            <h3 className="text-2xl font-bold text-white">{studyAnalytics?.approved || 0}</h3>
-                        </div>
-                        <div style={{ padding: '0.8rem', background: 'rgba(16, 185, 129, 0.2)', borderRadius: '12px' }}>
-                            <CheckCircle className="text-success" />
-                        </div>
-                    </div>
-                    <div className="stat-card flex items-center justify-between">
-                        <div>
-                            <p className="text-muted text-sm mb-1">Rejected</p>
-                            <h3 className="text-2xl font-bold text-white">{studyAnalytics?.rejected || 0}</h3>
-                        </div>
-                        <div style={{ padding: '0.8rem', background: 'rgba(244, 63, 94, 0.2)', borderRadius: '12px' }}>
-                            <Activity className="text-error" />
-                        </div>
-                    </div>
-                    <div className="stat-card flex items-center justify-between">
-                        <div>
-                            <p className="text-muted text-sm mb-1">Pending</p>
-                            <h3 className="text-2xl font-bold text-white">{studyAnalytics?.pending || 0}</h3>
-                        </div>
-                        <div style={{ padding: '0.8rem', background: 'rgba(245, 158, 11, 0.2)', borderRadius: '12px' }}>
-                            <Clock className="text-warning" />
-                        </div>
                     </div>
                 </div>
 
-                {/* Volunteer List */}
-                <div className="glass-card">
-                    <h3 className="chart-title">
-                        <Database size={18} className="text-primary" />
-                        Volunteer Enrollments
-                    </h3>
+                {/* Premium Stats Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.2rem', marginBottom: '2.5rem' }}>
+                    <StatCard title="Total Participants" value={studyAnalytics?.total_participants || 0} icon={Users} colorVar="--chart-blue" />
+                    <StatCard title="Approved" value={studyAnalytics?.approved || 0} icon={CheckCircle} colorVar="--success" />
+                    <StatCard title="Rejected" value={studyAnalytics?.rejected || 0} icon={Activity} colorVar="--secondary" />
+                    <StatCard title="Pending" value={studyAnalytics?.pending || 0} icon={Clock} colorVar="--accent" />
+                </div>
 
-                    <div className="table-container">
-                        {loading ? <p className="text-center text-muted py-8">Loading study data...</p> : (
-                            <table className="custom-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Name</th>
-                                        <th>Contact</th>
-                                        <th>Gender</th>
-                                        <th>Age</th>
-                                        <th>Status</th>
-                                        <th>Rejection Reason</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {studyData.map((row, i) => (
-                                        <tr key={i} className="animate-slide-up">
-                                            <td>
-                                                {row.date ? new Date(row.date).toLocaleDateString() : 'N/A'}
-                                            </td>
-                                            <td style={{ fontWeight: 500 }}>{row.name}</td>
-                                            <td className="text-muted">{row.contact}</td>
-                                            <td className="text-muted">{row.sex}</td>
-                                            <td className="text-muted">{row.age}</td>
-                                            <td>
-                                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${row.status === 'approved' ? 'text-success' :
-                                                    row.status === 'rejected' ? 'text-error' :
-                                                        'text-muted'
-                                                    }`}>
-                                                    {row.status?.toUpperCase()}
-                                                </span>
-                                            </td>
-                                            <td className="text-muted italic" title={row.reason_of_rejection}>
-                                                {row.reason_of_rejection || '-'}
-                                            </td>
+                {/* Volunteer List - Enhanced */}
+                <div style={{
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    backdropFilter: 'blur(20px)',
+                    borderRadius: '20px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    overflow: 'hidden',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+                }}>
+                    {/* Card Header */}
+                    <div style={{
+                        padding: '2rem 2rem 1.5rem',
+                        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
+                        borderBottom: '1px solid rgba(99, 102, 241, 0.15)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{
+                                padding: '0.9rem',
+                                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                                borderRadius: '14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)'
+                            }}>
+                                <Database size={24} color="white" />
+                            </div>
+                            <div>
+                                <h3 style={{ fontSize: '1.4rem', fontWeight: '800', margin: 0, marginBottom: '0.25rem' }}>
+                                    Volunteer Enrollments
+                                </h3>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>
+                                    Complete enrollment records and status tracking
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Table Content */}
+                    <div style={{ padding: '2rem' }}>
+                        {loading ? (
+                            <div style={{
+                                textAlign: 'center',
+                                padding: '4rem',
+                                color: 'var(--text-muted)'
+                            }}>
+                                <div style={{
+                                    width: '50px',
+                                    height: '50px',
+                                    border: '4px solid rgba(99, 102, 241, 0.2)',
+                                    borderTop: '4px solid #6366f1',
+                                    borderRadius: '50%',
+                                    margin: '0 auto 1rem',
+                                    animation: 'spin 1s linear infinite'
+                                }}></div>
+                                <style>{`
+                                    @keyframes spin {
+                                        0% { transform: rotate(0deg); }
+                                        100% { transform: rotate(360deg); }
+                                    }
+                                `}</style>
+                                <p style={{ fontSize: '1.1rem', fontWeight: '500' }}>Loading study data...</p>
+                            </div>
+                        ) : (
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{
+                                    width: '100%',
+                                    minWidth: '800px',
+                                    borderCollapse: 'collapse',
+                                    fontSize: '0.9rem'
+                                }}>
+                                    <thead>
+                                        <tr style={{
+                                            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%)',
+                                            borderBottom: '2px solid rgba(99, 102, 241, 0.2)'
+                                        }}>
+                                            <th style={{ padding: '1.2rem 1rem', textAlign: 'left', fontWeight: '700', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Date</th>
+                                            <th style={{ padding: '1.2rem 1rem', textAlign: 'left', fontWeight: '700', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Name</th>
+                                            <th style={{ padding: '1.2rem 1rem', textAlign: 'left', fontWeight: '700', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Contact</th>
+                                            <th style={{ padding: '1.2rem 1rem', textAlign: 'left', fontWeight: '700', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Gender</th>
+                                            <th style={{ padding: '1.2rem 1rem', textAlign: 'left', fontWeight: '700', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Age</th>
+                                            <th style={{ padding: '1.2rem 1rem', textAlign: 'left', fontWeight: '700', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Status</th>
+                                            <th style={{ padding: '1.2rem 1rem', textAlign: 'left', fontWeight: '700', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Rejection Reason</th>
                                         </tr>
-                                    ))}
-                                    {studyData.length === 0 && (
-                                        <tr><td colSpan="7" className="text-center text-muted py-8">No volunteers recorded for this study.</td></tr>
-                                    )}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {studyData.map((row, i) => (
+                                            <tr
+                                                key={i}
+                                                style={{
+                                                    borderBottom: '1px solid rgba(99, 102, 241, 0.08)',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.background = 'rgba(99, 102, 241, 0.05)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.background = 'transparent';
+                                                }}
+                                            >
+                                                <td style={{ padding: '1.2rem 1rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                                    {row.date ? new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                                                </td>
+                                                <td style={{ padding: '1.2rem 1rem', fontWeight: '600', fontSize: '0.95rem' }}>{row.name}</td>
+                                                <td style={{ padding: '1.2rem 1rem', color: 'var(--text-muted)', fontFamily: 'monospace', fontSize: '0.85rem' }}>{row.contact}</td>
+                                                <td style={{ padding: '1.2rem 1rem' }}>
+                                                    <span style={{
+                                                        padding: '0.35rem 0.85rem',
+                                                        borderRadius: '8px',
+                                                        fontSize: '0.8rem',
+                                                        fontWeight: '600',
+                                                        textTransform: 'capitalize',
+                                                        background: row.sex === 'Male' ? 'rgba(59, 130, 246, 0.15)' : row.sex === 'Female' ? 'rgba(236, 72, 153, 0.15)' : 'rgba(139, 92, 246, 0.15)',
+                                                        color: row.sex === 'Male' ? '#3b82f6' : row.sex === 'Female' ? '#ec4899' : '#8b5cf6'
+                                                    }}>
+                                                        {row.sex || 'N/A'}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '1.2rem 1rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{row.age || 'N/A'}</td>
+                                                <td style={{ padding: '1.2rem 1rem' }}>
+                                                    <span style={{
+                                                        padding: '0.45rem 1rem',
+                                                        borderRadius: '10px',
+                                                        fontSize: '0.8rem',
+                                                        fontWeight: '700',
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.5px',
+                                                        background: row.status === 'approved' ? 'rgba(16, 185, 129, 0.15)' :
+                                                            row.status === 'rejected' ? 'rgba(244, 63, 94, 0.15)' :
+                                                                'rgba(245, 158, 11, 0.15)',
+                                                        color: row.status === 'approved' ? '#10b981' :
+                                                            row.status === 'rejected' ? '#f43f5e' :
+                                                                '#f59e0b'
+                                                    }}>
+                                                        {row.status || 'pending'}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '1.2rem 1rem', color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.85rem', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={row.reason_of_rejection}>
+                                                    {row.reason_of_rejection || '-'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {studyData.length === 0 && (
+                                            <tr>
+                                                <td colSpan="7" style={{ padding: '4rem', textAlign: 'center' }}>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'center',
+                                                        gap: '1rem'
+                                                    }}>
+                                                        <div style={{
+                                                            width: '80px',
+                                                            height: '80px',
+                                                            background: 'rgba(99, 102, 241, 0.1)',
+                                                            borderRadius: '50%',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center'
+                                                        }}>
+                                                            <Users size={40} color="#6366f1" />
+                                                        </div>
+                                                        <div>
+                                                            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.25rem' }}>
+                                                                No volunteers recorded
+                                                            </p>
+                                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                                                Volunteer enrollments will appear here once added
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         )}
                     </div>
                 </div>

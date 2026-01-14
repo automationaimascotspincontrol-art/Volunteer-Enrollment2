@@ -826,6 +826,102 @@ const PRMCalendar = () => {
                             </div>
                         </div>
 
+                        {/* Volunteer Assignment Section */}
+                        <div style={{
+                            marginBottom: '1.5rem',
+                            padding: '1.5rem',
+                            background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
+                            borderRadius: '16px',
+                            border: '2px solid #86efac'
+                        }}>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                marginBottom: '1rem'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Users size={20} color="#10b981" />
+                                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#047857', textTransform: 'uppercase' }}>
+                                        Quick Assign Volunteers
+                                    </label>
+                                </div>
+                                <div style={{
+                                    padding: '4px 10px',
+                                    background: '#10b981',
+                                    color: '#fff',
+                                    borderRadius: '6px',
+                                    fontSize: '0.7rem',
+                                    fontWeight: '700'
+                                }}>
+                                    {studyDetails?.volunteersPlanned || 0} Needed
+                                </div>
+                            </div>
+
+                            <p style={{ fontSize: '0.85rem', color: '#047857', marginBottom: '1rem' }}>
+                                Assign volunteers to this study. System will automatically check washout periods.
+                            </p>
+
+                            <button
+                                onClick={() => {
+                                    const studyCode = studyDetails?.studyCode || studyDetails?.studyInstanceCode || studyDetails?.enteredStudyCode;
+                                    if (studyCode) {
+                                        navigate(`/prm/dashboard/${studyCode}`);
+                                    } else {
+                                        alert("Study code not found. Please try from the dashboard.");
+                                    }
+                                }}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.875rem',
+                                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: '12px',
+                                    fontSize: '0.95rem',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem',
+                                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.35)',
+                                    transition: 'all 0.3s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.transform = 'translateY(-2px)';
+                                    e.target.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.45)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.transform = 'translateY(0)';
+                                    e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.35)';
+                                }}
+                            >
+                                <Users size={18} />
+                                Go to Study Dashboard to Assign
+                            </button>
+
+                            {studyDetails?.drtWashoutDate && (
+                                <div style={{
+                                    marginTop: '0.75rem',
+                                    padding: '0.75rem',
+                                    background: '#fef3c7',
+                                    border: '1px solid #fde68a',
+                                    borderRadius: '8px',
+                                    fontSize: '0.8rem',
+                                    color: '#92400e',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem'
+                                }}>
+                                    <AlertTriangle size={16} color="#f59e0b" />
+                                    <span>
+                                        <strong>Washout Period:</strong> Volunteers will be blocked from other studies until {new Date(studyDetails.drtWashoutDate).toLocaleDateString()}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+
                         {/* Selected Visit Section */}
                         <div style={{ marginBottom: '1.5rem' }}>
                             <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>SELECTED VISIT</label>
