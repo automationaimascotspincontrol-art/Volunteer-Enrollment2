@@ -35,7 +35,7 @@ const RegistrationForm = () => {
             try {
                 const [volunteerRes, studiesRes] = await Promise.all([
                     volunteer ? Promise.resolve({ data: volunteer }) : api.get(`/volunteers/search/master?id=${id}`),
-                    api.get('/clinical/studies')
+                    api.get('/clinical/ongoing-studies')
                 ]);
 
                 let volData = volunteerRes.data;
@@ -49,7 +49,8 @@ const RegistrationForm = () => {
                 }
 
                 if (!volunteer) setVolunteer(volData);
-                setClinicalStudies(studiesRes.data);
+                // Handle new endpoint structure { studies: [], total: N }
+                setClinicalStudies(studiesRes.data.studies || []);
 
                 // Pre-fill fields
                 let calculatedAge = '';
@@ -240,7 +241,10 @@ const RegistrationForm = () => {
                                 name="study_assigned"
                                 value={formData.study_assigned}
                                 onChange={handleChange}
-                                options={clinicalStudies.map(s => ({ label: s.study_name, value: s.study_code }))}
+                                options={clinicalStudies.map(s => ({
+                                    label: s.enteredStudyName || s.studyName || s.study_name || "Unnamed Study",
+                                    value: s.enteredStudyCode || s.studyInstanceCode || s.study_code
+                                }))}
                                 required
                             />
                         </div>
