@@ -179,7 +179,7 @@ const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
         if (!window.confirm('Remove this volunteer from the study?')) return;
 
         try {
-            await api.delete(`/assigned-studies/${volunteerId}`);
+            await api.delete(`/prm/assigned-studies/${volunteerId}`);
             onAssignmentUpdate();
         } catch (e) {
             console.error('Failed to delete:', e);
