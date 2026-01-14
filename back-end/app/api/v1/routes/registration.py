@@ -3,6 +3,7 @@ from app.db.models.volunteer import RegistrationUpdate
 from app.db.mongodb import db
 from app.api.v1.deps import get_current_user
 from datetime import datetime
+from app.db.odm.assigned_study import AssignedStudy
 
 router = APIRouter()
 
@@ -163,6 +164,53 @@ async def update_registration(
                 {"$set": participation_doc},
                 upsert=True
             )
+
+            # ------------------------------------------------------------------
+            # SYNC TO ASSIGNED_STUDIES (New Collection)
+            # ------------------------------------------------------------------
+            try:
+                # Check for existing assignment
+                existing_assignment = await AssignedStudy.find_one({
+                    "volunteer_id": volunteer_id,
+                    "study_code": study_code
+                })
+
+                if not existing_assignment:
+                   # Create new assignment
+                   new_assignment = AssignedStudy(
+                       visit_id=f"REG-{volunteer_id}-{study_code}", # Simple unique ID
+                       assigned_by=current_recruiter["name"],
+                       assignment_date=datetime.now(), # Use current time
+                       status="assigned" if status_val == "approved" else "rejected", # Map status
+                       
+                       study_id=str(study_info.get("_id") if study_info else "manual"),
+                       study_code=study_code,
+                       study_name=study_name,
+                       
+                       volunteer_id=volunteer_id,
+                       volunteer_name=v_name,
+                       volunteer_contact=v_contact,
+                       volunteer_gender=v_sex,
+                       volunteer_age=v_age if v_age != "N/A" else None,
+                       volunteer_location=v_location,
+                       
+                       fitness_status="fit" if data.fit_status == "yes" else "unfit",
+                       remarks=data.remarks or ""
+                   )
+                   await new_assignment.create()
+                else:
+                    # Update status if needed
+                    existing_assignment.fitness_status = "fit" if data.fit_status == "yes" else "unfit"
+                    existing_assignment.status = "assigned" if status_val == "approved" else "rejected"
+                    existing_assignment.remarks = data.remarks or ""
+                    # Update any potentially improved contact info
+                    if v_contact and v_contact != "N/A":
+                        existing_assignment.volunteer_contact = v_contact
+                    await existing_assignment.save()
+                    
+            except Exception as e:
+                print(f"Error syncing to assigned_studies: {e}")
+                # Don't fail the request, just log it
 
     return {
         "message": f"Registration updated for {volunteer_id}",
