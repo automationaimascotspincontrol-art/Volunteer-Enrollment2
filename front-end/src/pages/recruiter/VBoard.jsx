@@ -10,6 +10,7 @@ import FieldVisitChart from '../../components/charts/FieldVisitChart';
 import EnrollmentChart from '../../components/charts/EnrollmentChart';
 import QuickActions from '../../components/QuickActions';
 import { Card, Button, Select } from '../../components/ui';
+import { getStudyData, downloadStudyReport } from '../../services/studyService';
 
 const StatCard = ({ title, value, icon: Icon, colorVar }) => {
     const colorMap = {
@@ -154,22 +155,16 @@ const VBoard = () => {
             return;
         }
         setStudyLoading(true);
-        setFetchError(null); // Reset error
+        setFetchError(null);
         try {
-            // Add cache busting timestamp
-            const timestamp = new Date().getTime();
-            const [participationRes, analyticsRes] = await Promise.all([
-                api.get(`/dashboard/clinical/participation?study_code=${studyCode}&_t=${timestamp}`),
-                api.get(`/dashboard/clinical/analytics?study_code=${studyCode}&_t=${timestamp}`)
-            ]);
-            console.log('📊 VBoard Participation Data:', participationRes.data);
-            console.log('📈 VBoard Analytics Data:', analyticsRes.data);
-            setStudyData(participationRes.data);
-            setStudyAnalytics(analyticsRes.data);
+            // Use centralized service
+            const { participation, analytics } = await getStudyData(studyCode);
+            setStudyData(participation);
+            setStudyAnalytics(analytics);
         } catch (err) {
-            console.error('Failed to fetch participation', err);
+            console.error('Failed to fetch study data:', err);
             setFetchError(err.message || "Failed to load data");
-            setStudyData([]); // Ensure empty on error
+            setStudyData([]);
         } finally {
             setStudyLoading(false);
         }
@@ -184,23 +179,8 @@ const VBoard = () => {
     const downloadReport = async () => {
         if (!selectedStudy) return;
         try {
-
-            const response = await api.get(`/dashboard/clinical/export?study_code=${encodeURIComponent(selectedStudy)}`, {
-                responseType: 'blob'
-            });
-
-            // No need to check response.ok with axios, it throws on error
-
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Study_Report_${selectedStudy}_${new Date().toISOString().split('T')[0]}.xlsx`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        } catch (err) {
-            console.error('Download failed', err);
+            await downloadStudyReport(selectedStudy);
+        } catch (error) {
             alert('Failed to download report. Please try again.');
         }
     };
