@@ -123,6 +123,38 @@ async def export_assigned_studies(
     
     return StreamingResponse(output, headers=headers, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
+@router.delete("/assigned-studies/{assignment_id}")
+async def delete_assigned_study(
+    assignment_id: str,
+    user: UserBase = Depends(get_current_user)
+):
+    """
+    Remove a volunteer from an assigned study.
+    """
+    try:
+        # Convert to ObjectId
+        obj_id = PydanticObjectId(assignment_id)
+        
+        # Find and delete the assignment
+        assignment = await AssignedStudy.get(obj_id)
+        
+        if not assignment:
+            raise HTTPException(status_code=404, detail="Assignment not found")
+        
+        # Delete the assignment
+        await assignment.delete()
+        
+        logger.info(f"Assignment {assignment_id} deleted by {user.username}")
+        
+        return {
+            "success": True,
+            "message": "Volunteer removed from study successfully"
+        }
+    except Exception as e:
+        logger.error(f"Error deleting assignment {assignment_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/assigned-studies/export/{study_code}")
 async def export_study_specific(
     study_code: str,
