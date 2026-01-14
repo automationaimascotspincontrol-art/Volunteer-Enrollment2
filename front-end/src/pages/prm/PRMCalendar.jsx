@@ -26,12 +26,17 @@ const PRMCalendar = () => {
     const [studyDetails, setStudyDetails] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
+    // Loading States
+    const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+    const [isLoadingMetrics, setIsLoadingMetrics] = useState(true);
+
     useEffect(() => {
         fetchEvents();
         fetchMetrics();
     }, []);
 
     const fetchMetrics = async () => {
+        setIsLoadingMetrics(true);
         try {
             const res = await axios.get('http://localhost:8000/api/v1/calendar/metrics', {
                 headers: { Authorization: `Bearer ${token}` }
@@ -39,10 +44,13 @@ const PRMCalendar = () => {
             setMetrics(res.data);
         } catch (err) {
             console.error("Error fetching metrics:", err);
+        } finally {
+            setIsLoadingMetrics(false);
         }
     };
 
     const fetchEvents = async () => {
+        setIsLoadingEvents(true);
         try {
             const res = await axios.get('http://localhost:8000/api/v1/calendar-events', {
                 headers: { Authorization: `Bearer ${token}` }
@@ -50,6 +58,8 @@ const PRMCalendar = () => {
             setEvents(res.data);
         } catch (err) {
             console.error("Error fetching calendar events:", err);
+        } finally {
+            setIsLoadingEvents(false);
         }
     };
 
@@ -554,21 +564,117 @@ const PRMCalendar = () => {
                         }
                     `}</style>
 
-                    <FullCalendar
-                        plugins={[dayGridPlugin, interactionPlugin]}
-                        initialView="dayGridMonth"
-                        headerToolbar={{
-                            left: 'prev,next today',
-                            center: 'title',
-                            right: 'dayGridMonth,dayGridWeek'
-                        }}
-                        events={filteredEvents}
-                        height="75vh"
-                        dateClick={handleDateClick}
-                        eventClick={handleEventClick}
-                        dayMaxEvents={3}
-                        firstDay={1}
-                    />
+                    {/* Loading State */}
+                    {isLoadingEvents ? (
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minHeight: '60vh',
+                            gap: '1.5rem'
+                        }}>
+                            <div style={{
+                                width: '60px',
+                                height: '60px',
+                                border: '4px solid #e2e8f0',
+                                borderTop: '4px solid #6366f1',
+                                borderRadius: '50%',
+                                animation: 'spin 1s linear infinite'
+                            }}></div>
+                            <style>{`
+                                @keyframes spin {
+                                    0% { transform: rotate(0deg); }
+                                    100% { transform: rotate(360deg); }
+                                }
+                            `}</style>
+                            <p style={{ color: '#64748b', fontSize: '1.1rem', fontWeight: '500' }}>
+                                Loading calendar events...
+                            </p>
+                        </div>
+                    ) : events.length === 0 ? (
+                        /* Empty State */
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minHeight: '60vh',
+                            gap: '1.5rem',
+                            padding: '2rem'
+                        }}>
+                            <div style={{
+                                width: '120px',
+                                height: '120px',
+                                background: 'linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)',
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 10px 30px rgba(99, 102, 241, 0.15)'
+                            }}>
+                                <CalendarIcon size={60} color="#6366f1" />
+                            </div>
+                            <div style={{ textAlign: 'center', maxWidth: '500px' }}>
+                                <h3 style={{
+                                    fontSize: '1.5rem',
+                                    fontWeight: '700',
+                                    color: '#1e293b',
+                                    marginBottom: '0.5rem'
+                                }}>
+                                    No Studies Scheduled
+                                </h3>
+                                <p style={{
+                                    fontSize: '1rem',
+                                    color: '#64748b',
+                                    lineHeight: '1.6',
+                                    marginBottom: '1.5rem'
+                                }}>
+                                    Get started by creating your first study. Click the "Create Study" button above to schedule a new study instance.
+                                </p>
+                                <button
+                                    onClick={() => { setSelectedDate(new Date()); setIsModalOpen(true); }}
+                                    style={{
+                                        padding: '0.875rem 2rem',
+                                        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                                        color: '#fff',
+                                        border: 'none',
+                                        borderRadius: '12px',
+                                        fontSize: '1rem',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                                        transition: 'all 0.3s',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem'
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+                                    onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+                                >
+                                    <Plus size={20} />
+                                    Create First Study
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        /* Calendar */
+                        <FullCalendar
+                            plugins={[dayGridPlugin, interactionPlugin]}
+                            initialView="dayGridMonth"
+                            headerToolbar={{
+                                left: 'prev,next today',
+                                center: 'title',
+                                right: 'dayGridMonth,dayGridWeek'
+                            }}
+                            events={filteredEvents}
+                            height="75vh"
+                            dateClick={handleDateClick}
+                            eventClick={handleEventClick}
+                            dayMaxEvents={3}
+                            firstDay={1}
+                        />
+                    )}
                 </div>
             </div>
 
