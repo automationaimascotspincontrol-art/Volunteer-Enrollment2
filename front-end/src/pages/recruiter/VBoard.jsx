@@ -162,6 +162,8 @@ const VBoard = () => {
                 api.get(`/dashboard/clinical/participation?study_code=${studyCode}&_t=${timestamp}`),
                 api.get(`/dashboard/clinical/analytics?study_code=${studyCode}&_t=${timestamp}`)
             ]);
+            console.log('📊 VBoard Participation Data:', participationRes.data);
+            console.log('📈 VBoard Analytics Data:', analyticsRes.data);
             setStudyData(participationRes.data);
             setStudyAnalytics(analyticsRes.data);
         } catch (err) {
