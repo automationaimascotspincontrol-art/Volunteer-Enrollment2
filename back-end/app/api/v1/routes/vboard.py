@@ -304,52 +304,52 @@ async def get_study_analytics(
     """Get detailed analytics for a specific clinical study"""
     logger.info(f"Analytics Request - Study: {study_code}")
     try:
-        # Base filter (Case insensitive)
-        filter_q = {"study.study_code": {"$regex": f"^{study_code}$", "$options": "i"}}
+        # Base filter for assigned_studies collection (Case insensitive)
+        filter_q = {"study_code": {"$regex": f"^{study_code}$", "$options": "i"}}
         
-        # Total count
-        total_participants = await db.clinical_participation.count_documents(filter_q)
+        # Total count from assigned_studies
+        total_participants = await db.assigned_studies.count_documents(filter_q)
         
-        # 3. Status Distribution
+        # Status Distribution from assigned_studies
         status_pipeline = [
             {"$match": filter_q},
             {"$group": {"_id": "$status", "count": {"$sum": 1}}},
             {"$project": {"name": "$_id", "value": "$count", "_id": 0}}
         ]
-        status_data = await db.clinical_participation.aggregate(status_pipeline).to_list(None)
+        status_data = await db.assigned_studies.aggregate(status_pipeline).to_list(None)
         
-        # Timeline (daily registrations)
+        # Timeline (daily assignments)
         timeline_pipeline = [
-            {"$match": {**filter_q, "date": {"$ne": None}}},
-            {"$group": {"_id": "$date", "count": {"$sum": 1}}},
+            {"$match": {**filter_q, "assigned_date": {"$ne": None}}},
+            {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$assigned_date"}}, "count": {"$sum": 1}}},
             {"$sort": {"_id": 1}},
             {"$project": {"date": "$_id", "count": 1, "_id": 0}}
         ]
-        timeline_data = await db.clinical_participation.aggregate(timeline_pipeline).to_list(None)
+        timeline_data = await db.assigned_studies.aggregate(timeline_pipeline).to_list(None)
 
-        # 4. Location Distribution (New)
+        # Location Distribution
         location_pipeline = [
             {"$match": filter_q},
-            {"$group": {"_id": "$volunteer_ref.location", "count": {"$sum": 1}}},
+            {"$group": {"_id": "$volunteer_location", "count": {"$sum": 1}}},
             {"$sort": {"count": -1}},
             {"$limit": 10},
             {"$project": {"name": "$_id", "value": "$count", "_id": 0}}
         ]
-        location_data = await db.clinical_participation.aggregate(location_pipeline).to_list(None)
+        location_data = await db.assigned_studies.aggregate(location_pipeline).to_list(None)
 
-        # 5. Recruiters Leaderboard
+        # Recruiters Leaderboard (if available in assigned_studies)
         recruiter_pipeline = [
             {"$match": filter_q},
-            {"$group": {"_id": "$audit.recruiter", "count": {"$sum": 1}}},
+            {"$group": {"_id": "$assigned_by", "count": {"$sum": 1}}},
             {"$sort": {"count": -1}},
             {"$limit": 5},
             {"$project": {"name": "$_id", "value": "$count", "_id": 0}}
         ]
-        recruiter_data = await db.clinical_participation.aggregate(recruiter_pipeline).to_list(None)
+        recruiter_data = await db.assigned_studies.aggregate(recruiter_pipeline).to_list(None)
         
-        # Get study name
-        study_info = await db.clinical_studies.find_one({"study_code": {"$regex": f"^{study_code}$", "$options": "i"}})
-        study_name = study_info["study_name"] if study_info else study_code
+        # Get study name from study instances
+        study_info = await db.study_instances.find_one({"enteredStudyCode": {"$regex": f"^{study_code}$", "$options": "i"}})
+        study_name = study_info.get("enteredStudyName") if study_info else study_code
         
         return {
             "study_code": study_code,

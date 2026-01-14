@@ -288,20 +288,20 @@ async def get_location_specific_stats(location: str) -> dict:
 
 async def get_study_participation_details(study_code: str) -> list:
     """
-    Fetch comprehensive participation details for a study.
-    Links participation records with Master Profiles.
+    Fetch comprehensive participation details for a study from assigned_studies collection.
+    Links assignment records with Master Profiles.
     Handles 'Legacy' IDs and Age Calculation.
     """
-    # Case insensitive search
-    participation = await db.clinical_participation.find(
-        {"study.study_code": {"$regex": f"^{study_code}$", "$options": "i"}}
-    ).sort("date", -1).to_list(None)
+    # Case insensitive search in assigned_studies collection
+    assignments = await db.assigned_studies.find(
+        {"study_code": {"$regex": f"^{study_code}$", "$options": "i"}}
+    ).sort("assigned_date", -1).to_list(None)
     
-    if not participation:
+    if not assignments:
         return []
 
     # Extract IDs to fetch latest details from master
-    vol_ids = [p.get("volunteer_id") for p in participation if p.get("volunteer_id")]
+    vol_ids = [a.get("volunteer_id") for a in assignments if a.get("volunteer_id")]
     
     # Fetch master records
     masters = await db.volunteers_master.find(
@@ -311,8 +311,8 @@ async def get_study_participation_details(study_code: str) -> list:
     master_map = {v["volunteer_id"]: v for v in masters}
     
     results = []
-    for p in participation:
-        vid = p.get("volunteer_id")
+    for a in assignments:
+        vid = a.get("volunteer_id")
         v_master = master_map.get(vid)
         basic = v_master.get("basic_info", {}) if v_master else {}
         address_info = v_master.get("address_info", {}) if v_master else {}
@@ -332,30 +332,30 @@ async def get_study_participation_details(study_code: str) -> list:
                 age = basic.get("age", "N/A")
 
         # Normalize Gender
-        raw_gender = basic.get("gender", p.get("volunteer_ref", {}).get("sex", "N/A"))
+        raw_gender = basic.get("gender", a.get("volunteer_gender", "N/A"))
         gender = raw_gender
-        if raw_gender in ["VB", "male_minor"]: gender = "Male"
-        elif raw_gender in ["FVB", "female_minor"]: gender = "Female"
+        if raw_gender in ["VB", "male_minor", "Male"]: gender = "Male"
+        elif raw_gender in ["FVB", "female_minor", "Female"]: gender = "Female"
 
-        # Prefer Legacy ID for display if Master missing (OR use Legacy ID from Master if preferred)
-        # Logic: If Master exists, check its legacy_id. If missing, use VID.
+        # Prefer Legacy ID for display if Master missing
         display_id = (v_master.get("legacy_id") if v_master else None) or vid
 
         results.append({
             "volunteer_id": display_id,
             "original_id": vid, # Keep track of DB ID
-            "name": basic.get("name") or p.get("volunteer_ref", {}).get("name", "N/A"),
-            "contact": basic.get("contact") or p.get("volunteer_ref", {}).get("contact", "N/A"),
+            "name": basic.get("name") or a.get("volunteer_name", "N/A"),
+            "contact": basic.get("contact") or a.get("volunteer_contact", "N/A"),
             "gender": gender,
+            "sex": gender,  # Add sex field for compatibility
             "age": age,
             "dob": dob,
-            "location": address_info.get("location") or "N/A",
+            "location": address_info.get("location") or a.get("volunteer_location", "N/A"),
             "address": address_info.get("address", "N/A"),
-            "date": p.get("date", "N/A"),
-            "status": p.get("status", "pending"),
-            "reason_of_rejection": p.get("reason_of_rejection", "N/A"),
-            "recruiter": p.get("audit", {}).get("recruiter", "N/A"),
-            "study_code": p.get("study", {}).get("study_code", study_code)
+            "date": a.get("assigned_date", "N/A"),
+            "status": a.get("status", "pending"),
+            "reason_of_rejection": a.get("rejection_reason", "N/A"),
+            "recruiter": a.get("assigned_by", "N/A"),
+            "study_code": a.get("study_code", study_code)
         })
         
     return results
