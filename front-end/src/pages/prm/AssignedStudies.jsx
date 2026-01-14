@@ -488,7 +488,7 @@ const AssignedStudies = () => {
     useEffect(() => {
         const groups = {};
         assignments.forEach(curr => {
-            const code = curr.study_code || 'UNKNOWN';
+            const code = curr.prm_study_code || curr.study_code || 'UNKNOWN';
             if (!groups[code]) {
                 groups[code] = {
                     studyCode: code,
