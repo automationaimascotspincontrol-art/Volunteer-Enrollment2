@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FileText, Download, Sparkles, TrendingUp, Users, Calendar, AlertCircle } from 'lucide-react';
-import { generateReport, exportReportPDF, getReportMetrics } from '../services/reportService';
+import { generateReport, exportReportPDF } from '../services/reportService';
 
 const Reports = () => {
     const [reportType, setReportType] = useState('overall_summary');
@@ -52,139 +52,180 @@ const Reports = () => {
 
     const selectedReportInfo = reportTypes.find(r => r.value === reportType);
 
+    // --- STYLES ---
+    const glassPanelStyle = {
+        background: 'rgba(255, 255, 255, 0.7)', // White with opacity
+        backdropFilter: 'blur(20px)',
+        borderRadius: '24px',
+        border: '1px solid rgba(255, 255, 255, 0.6)',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02), 0 0 0 1px rgba(226, 232, 240, 0.3)',
+        color: '#1e293b' // Slate 800
+    };
+
+    const inputStyle = {
+        width: '100%',
+        padding: '12px 16px',
+        borderRadius: '12px',
+        border: '1px solid #e2e8f0', // Slate 200
+        background: '#ffffff',
+        color: '#0f172a', // Slate 900
+        fontSize: '0.95rem',
+        outline: 'none',
+        transition: 'all 0.2s',
+        fontFamily: 'inherit',
+        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+    };
+
+    const labelStyle = {
+        display: 'block',
+        fontSize: '0.75rem',
+        fontWeight: '700',
+        marginBottom: '8px',
+        color: '#64748b', // Slate 500
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em'
+    };
+
     return (
         <div style={{
             minHeight: '100vh',
-            background: 'linear-gradient(to bottom, #fafbfc 0%, #ffffff 100%)',
-            padding: '2rem'
+            background: '#f8fafc', // Slate 50
+            backgroundImage: `
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(14, 165, 233, 0.08) 0px, transparent 50%)
+            `,
+            padding: '2rem',
+            fontFamily: "'Outfit', sans-serif",
+            color: '#0f172a'
         }}>
             <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
                 {/* Header */}
-                <div style={{ marginBottom: '2rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                        <Sparkles size={32} style={{ color: '#6366f1' }} />
-                        <h1 style={{
-                            fontSize: '2rem',
-                            fontWeight: '800',
-                            background: 'linear-gradient(135deg, #6366f1 0%, #ec4899 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            margin: 0
-                        }}>
-                            AI-Powered Reports
-                        </h1>
+                <div style={{ marginBottom: '3rem', textAlign: 'center' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', padding: '8px 16px', background: 'white', borderRadius: '100px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                        <Sparkles size={18} style={{ color: '#6366f1' }} />
+                        <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#6366f1' }}>Powered by Google Gemini AI</span>
                     </div>
-                    <p style={{ color: '#6b7280', fontSize: '1rem', margin: 0 }}>
-                        Generate intelligent insights powered by Google Gemini AI
+                    <h1 style={{
+                        fontSize: '3.5rem',
+                        fontWeight: '800',
+                        color: '#0f172a',
+                        margin: '0 0 1rem 0',
+                        letterSpacing: '-0.03em',
+                        background: 'linear-gradient(135deg, #0f172a 0%, #334155 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
+                    }}>
+                        Intelligent Reports
+                    </h1>
+                    <p style={{ color: '#64748b', fontSize: '1.2rem', margin: 0, maxWidth: '600px', marginInline: 'auto', fontWeight: '400' }}>
+                        Generate deep insights and actionable analytics from your volunteer and study data in seconds.
                     </p>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(350px, 1fr) 2fr', gap: '2rem', alignItems: 'start' }}>
                     {/* Left Panel - Controls */}
-                    <div style={{
-                        background: 'white',
-                        borderRadius: '16px',
-                        padding: '2rem',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-                        border: '1px solid rgba(0, 0, 0, 0.08)',
-                        height: 'fit-content'
-                    }}>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '1.5rem', color: '#1f2937' }}>
-                            Report Configuration
+                    <div style={{ ...glassPanelStyle, padding: '2rem' }}>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '1.5rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ width: '4px', height: '20px', background: '#6366f1', borderRadius: '2px' }} />
+                            Configuration
                         </h2>
 
                         {/* Report Type Selection */}
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.75rem', color: '#374151' }}>
-                                Report Type
-                            </label>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div style={{ marginBottom: '2rem' }}>
+                            <label style={labelStyle}>Select Report Type</label>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                 {reportTypes.map(type => (
                                     <button
                                         key={type.value}
                                         onClick={() => setReportType(type.value)}
                                         style={{
                                             padding: '1rem',
-                                            borderRadius: '12px',
-                                            border: `2px solid ${reportType === type.value ? '#6366f1' : '#e5e7eb'}`,
-                                            background: reportType === type.value ? 'rgba(99, 102, 241, 0.05)' : 'white',
+                                            borderRadius: '16px',
+                                            border: `1px solid ${reportType === type.value ? '#6366f1' : 'transparent'}`,
+                                            background: reportType === type.value ? 'rgba(99, 102, 241, 0.08)' : 'rgba(255, 255, 255, 0.5)',
                                             cursor: 'pointer',
                                             textAlign: 'left',
-                                            transition: 'all 0.2s'
+                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            position: 'relative',
+                                            overflow: 'hidden'
+                                        }}
+                                        onMouseEnter={e => {
+                                            if (reportType !== type.value) {
+                                                e.currentTarget.style.background = 'white';
+                                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.05)';
+                                            }
+                                        }}
+                                        onMouseLeave={e => {
+                                            if (reportType !== type.value) {
+                                                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
+                                                e.currentTarget.style.transform = 'translateY(0)';
+                                                e.currentTarget.style.boxShadow = 'none';
+                                            }
                                         }}
                                     >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                                            {type.icon}
-                                            <span style={{ fontWeight: '600', color: '#1f2937' }}>{type.label}</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+                                            <div style={{
+                                                padding: '8px',
+                                                borderRadius: '10px',
+                                                background: reportType === type.value ? '#6366f1' : '#f1f5f9',
+                                                color: reportType === type.value ? 'white' : '#64748b',
+                                                display: 'flex',
+                                                transition: 'all 0.2s'
+                                            }}>
+                                                {type.icon}
+                                            </div>
+                                            <span style={{ fontWeight: '600', color: reportType === type.value ? '#312e81' : '#334155', fontSize: '1rem' }}>{type.label}</span>
                                         </div>
-                                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>{type.description}</p>
+                                        <p style={{ margin: '0 0 0 44px', fontSize: '0.85rem', color: '#64748b', lineHeight: '1.4' }}>{type.description}</p>
                                     </button>
                                 ))}
                             </div>
                         </div>
 
-                        {/* Custom Prompt (for custom reports) */}
+                        {/* Custom Prompt */}
                         {reportType === 'custom' && (
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', color: '#374151' }}>
-                                    Your Question
-                                </label>
+                            <div style={{ marginBottom: '2rem' }}>
+                                <label style={labelStyle}>Your Question</label>
                                 <textarea
                                     value={customPrompt}
                                     onChange={(e) => setCustomPrompt(e.target.value)}
-                                    placeholder="E.g., What's our volunteer retention trend over the last 3 months?"
+                                    placeholder="e.g., Analyzing the gender ratio of volunteers in the last 6 months..."
                                     rows={4}
                                     maxLength={500}
                                     style={{
-                                        width: '100%',
-                                        padding: '0.75rem',
-                                        borderRadius: '8px',
-                                        border: '1px solid #e5e7eb',
-                                        fontSize: '0.95rem',
-                                        fontFamily: 'inherit',
-                                        resize: 'vertical'
+                                        ...inputStyle,
+                                        resize: 'vertical',
+                                        lineHeight: '1.6'
                                     }}
+                                    onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)'; }}
+                                    onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)'; }}
                                 />
-                                <p style={{ fontSize: '0.75rem', color: '#9ca3af', margin: '0.25rem 0 0 0' }}>
-                                    {customPrompt.length}/500 characters
-                                </p>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{customPrompt.length}/500</span>
+                                </div>
                             </div>
                         )}
 
-                        {/* Date Range (optional) */}
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', color: '#374151' }}>
-                                Date Range (Optional)
-                            </label>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                        {/* Date Range */}
+                        <div style={{ marginBottom: '2rem' }}>
+                            <label style={labelStyle}>Date Range Filter (Optional)</label>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div>
-                                    <label style={{ fontSize: '0.75rem', color: '#6b7280', display: 'block', marginBottom: '0.25rem' }}>Start</label>
                                     <input
                                         type="date"
                                         value={dateRange.start}
                                         onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.5rem',
-                                            borderRadius: '8px',
-                                            border: '1px solid #e5e7eb',
-                                            fontSize: '0.9rem'
-                                        }}
+                                        style={inputStyle}
                                     />
                                 </div>
                                 <div>
-                                    <label style={{ fontSize: '0.75rem', color: '#6b7280', display: 'block', marginBottom: '0.25rem' }}>End</label>
                                     <input
                                         type="date"
                                         value={dateRange.end}
                                         onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.5rem',
-                                            borderRadius: '8px',
-                                            border: '1px solid #e5e7eb',
-                                            fontSize: '0.9rem'
-                                        }}
+                                        style={inputStyle}
                                     />
                                 </div>
                             </div>
@@ -196,175 +237,226 @@ const Reports = () => {
                             disabled={loading || (reportType === 'custom' && !customPrompt.trim())}
                             style={{
                                 width: '100%',
-                                padding: '1rem',
-                                borderRadius: '12px',
+                                padding: '16px',
+                                borderRadius: '16px',
                                 border: 'none',
-                                background: loading ? '#9ca3af' : 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+                                background: loading ? '#cbd5e1' : 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', // Indigo to Violet
                                 color: 'white',
                                 fontWeight: '700',
-                                fontSize: '1rem',
+                                fontSize: '1.1rem',
                                 cursor: loading ? 'not-allowed' : 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: '0.5rem',
-                                transition: 'all 0.2s'
+                                gap: '10px',
+                                boxShadow: loading ? 'none' : '0 10px 20px -5px rgba(79, 70, 229, 0.4)',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                letterSpacing: '0.02em',
+                                opacity: loading || (reportType === 'custom' && !customPrompt.trim()) ? 0.7 : 1
                             }}
+                            onMouseEnter={e => !loading && (e.target.style.transform = 'translateY(-2px)')}
+                            onMouseLeave={e => !loading && (e.target.style.transform = 'translateY(0)')}
                         >
                             {loading ? (
                                 <>
                                     <div style={{
-                                        width: '20px',
-                                        height: '20px',
+                                        width: '24px',
+                                        height: '24px',
                                         border: '3px solid rgba(255,255,255,0.3)',
                                         borderTop: '3px solid white',
                                         borderRadius: '50%',
                                         animation: 'spin 1s linear infinite'
                                     }} />
-                                    Generating...
+                                    <span>Processing...</span>
                                 </>
                             ) : (
                                 <>
-                                    <Sparkles size={20} />
-                                    Generate Report
+                                    <Sparkles size={22} fill="white" />
+                                    <span>Generate Insights</span>
                                 </>
                             )}
                         </button>
-
-                        <style>{`
-                            @keyframes spin {
-                                0% { transform: rotate(0deg); }
-                                100% { transform: rotate(360deg); }
-                            }
-                        `}</style>
                     </div>
 
-                    {/* Right Panel - Report Display */}
-                    <div style={{
-                        background: 'white',
-                        borderRadius: '16px',
-                        padding: '2rem',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-                        border: '1px solid rgba(0, 0, 0, 0.08)',
-                        minHeight: '600px'
-                    }}>
+                    {/* Right Panel - Display */}
+                    <div style={{ ...glassPanelStyle, padding: '3rem', minHeight: '650px', display: 'flex', flexDirection: 'column' }}>
                         {error && (
                             <div style={{
-                                padding: '1rem',
-                                background: 'rgba(239, 68, 68, 0.1)',
-                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                padding: '16px',
+                                background: '#fef2f2',
+                                border: '1px solid #fee2e2',
                                 borderRadius: '12px',
-                                marginBottom: '1rem',
+                                marginBottom: '2rem',
                                 display: 'flex',
                                 alignItems: 'start',
-                                gap: '0.75rem'
+                                gap: '12px',
+                                animation: 'slideDown 0.3s ease-out'
                             }}>
-                                <AlertCircle size={20} style={{ color: '#ef4444', flexShrink: 0, marginTop: '2px' }} />
+                                <AlertCircle size={24} style={{ color: '#ef4444', flexShrink: 0 }} />
                                 <div>
-                                    <p style={{ margin: 0, fontWeight: '600', color: '#b91c1c' }}>Error</p>
-                                    <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: '#dc2626' }}>{error}</p>
+                                    <p style={{ margin: 0, fontWeight: '700', color: '#991b1b' }}>Generation Failed</p>
+                                    <p style={{ margin: '4px 0 0 0', fontSize: '0.95rem', color: '#b91c1c' }}>{error}</p>
                                 </div>
                             </div>
                         )}
 
                         {!reportData && !loading && (
-                            <div style={{ textAlign: 'center', padding: '4rem 2rem', color: '#9ca3af' }}>
-                                <FileText size={64} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
-                                <p style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.5rem' }}>No report generated yet</p>
-                                <p style={{ fontSize: '0.95rem' }}>Select a report type and click "Generate Report" to get started</p>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: '#64748b' }}>
+                                <div style={{
+                                    width: '120px',
+                                    height: '120px',
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: '2rem',
+                                    boxShadow: '0 20px 40px -10px rgba(14, 165, 233, 0.1)',
+                                    border: '1px solid #e0f2fe'
+                                }}>
+                                    <Sparkles size={48} style={{ color: '#0ea5e9' }} />
+                                </div>
+                                <h3 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.75rem' }}>Ready to Analyze</h3>
+                                <p style={{ fontSize: '1.1rem', maxWidth: '400px', lineHeight: '1.6', color: '#64748b' }}>Select a report type on the left and tap 'Generate Insights' to start the AI analysis engine.</p>
                             </div>
                         )}
 
                         {reportData && (
-                            <>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '2px solid #f3f4f6' }}>
+                            <div style={{ animation: 'fadeIn 0.5s ease-out' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid #e2e8f0' }}>
                                     <div>
-                                        <h2 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 0.5rem 0', color: '#1f2937' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>REPORT RESULT</span>
+                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }} />
+                                        </div>
+                                        <h2 style={{ fontSize: '2.5rem', fontWeight: '800', margin: 0, lineHeight: '1.1', color: '#0f172a' }}>
                                             {selectedReportInfo?.label}
                                         </h2>
-                                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#6b7280' }}>
+                                        <p style={{ margin: '8px 0 0 0', fontSize: '1rem', color: '#64748b' }}>
                                             Generated on {new Date(reportData.generated_at).toLocaleString()}
                                         </p>
                                     </div>
                                     <button
                                         onClick={handleExport}
                                         style={{
-                                            padding: '0.75rem 1.25rem',
-                                            borderRadius: '10px',
-                                            border: '1px solid #6366f1',
+                                            padding: '12px 24px',
+                                            borderRadius: '12px',
+                                            border: '1px solid #e2e8f0',
                                             background: 'white',
                                             color: '#6366f1',
                                             fontWeight: '600',
                                             cursor: 'pointer',
                                             display: 'flex',
                                             alignItems: 'center',
-                                            gap: '0.5rem',
-                                            transition: 'all 0.2s'
+                                            gap: '8px',
+                                            transition: 'all 0.2s',
+                                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
                                         }}
                                         onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = '#6366f1';
-                                            e.currentTarget.style.color = 'white';
+                                            e.currentTarget.style.background = '#f8fafc';
+                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.05)';
                                         }}
                                         onMouseLeave={(e) => {
                                             e.currentTarget.style.background = 'white';
-                                            e.currentTarget.style.color = '#6366f1';
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
                                         }}
                                     >
-                                        <Download size={18} />
+                                        <Download size={20} />
                                         Export PDF
                                     </button>
                                 </div>
 
                                 <div style={{
-                                    background: 'linear-gradient(to bottom right, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05))',
-                                    padding: '1.5rem',
-                                    borderRadius: '12px',
-                                    border: '1px solid rgba(99, 102, 241, 0.1)',
-                                    marginBottom: '1.5rem'
+                                    background: '#f8fafc',
+                                    borderRadius: '20px',
+                                    padding: '2.5rem',
+                                    border: '1px solid #e2e8f0',
+                                    marginBottom: '2rem'
                                 }}>
-                                    <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem', color: '#4f46e5', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <Sparkles size={20} />
-                                        AI-Generated Insights
-                                    </h3>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.5rem' }}>
+                                        <Sparkles size={24} style={{ color: '#6366f1' }} />
+                                        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#0f172a', margin: 0 }}>Executive Summary</h3>
+                                    </div>
+
                                     <div style={{
-                                        color: '#374151',
-                                        lineHeight: '1.7',
-                                        fontSize: '0.95rem',
-                                        whiteSpace: 'pre-wrap'
+                                        color: '#334155',
+                                        lineHeight: '1.8',
+                                        fontSize: '1.1rem',
+                                        whiteSpace: 'pre-wrap',
+                                        fontFamily: "'Outfit', sans-serif"
                                     }}>
                                         {reportData.summary}
                                     </div>
                                 </div>
 
-                                {/* Raw Data Section (Collapsible) */}
-                                <details style={{ marginTop: '1.5rem' }}>
+                                {/* Raw Data Section */}
+                                <details style={{ marginTop: '2rem' }}>
                                     <summary style={{
                                         cursor: 'pointer',
                                         fontWeight: '600',
-                                        padding: '0.75rem',
-                                        background: '#f9fafb',
-                                        borderRadius: '8px',
-                                        marginBottom: '0.5rem'
+                                        padding: '12px 16px',
+                                        background: 'white',
+                                        borderRadius: '12px',
+                                        marginBottom: '1rem',
+                                        color: '#64748b',
+                                        listStyle: 'none',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        border: '1px solid #e2e8f0'
                                     }}>
-                                        View Raw Data
+                                        <div style={{ padding: '4px', background: '#f1f5f9', borderRadius: '4px' }}>
+                                            <FileText size={14} />
+                                        </div>
+                                        View Raw JSON Data
                                     </summary>
                                     <pre style={{
-                                        background: '#1f2937',
-                                        color: '#e5e7eb',
-                                        padding: '1rem',
-                                        borderRadius: '8px',
+                                        background: '#0f172a',
+                                        color: '#cbd5e1',
+                                        padding: '20px',
+                                        borderRadius: '16px',
                                         fontSize: '0.85rem',
                                         overflow: 'auto',
-                                        maxHeight: '400px'
+                                        maxHeight: '400px',
+                                        fontFamily: "'JetBrains Mono', monospace"
                                     }}>
                                         {JSON.stringify(reportData.raw_data, null, 2)}
                                     </pre>
                                 </details>
-                            </>
+                            </div>
                         )}
                     </div>
                 </div>
             </div>
+            <style>{`
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                @keyframes slideDown {
+                    from { opacity: 0; transform: translateY(-10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                ::-webkit-scrollbar {
+                    width: 8px;
+                }
+                ::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                ::-webkit-scrollbar-thumb {
+                    background: #cbd5e1; /* Slate 300 */
+                    border-radius: 4px;
+                }
+                ::-webkit-scrollbar-thumb:hover {
+                    background: #94a3b8; /* Slate 400 */
+                }
+            `}</style>
         </div>
     );
 };

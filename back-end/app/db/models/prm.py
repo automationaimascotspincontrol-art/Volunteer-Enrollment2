@@ -27,6 +27,8 @@ class StudyInstance(BaseModel):
     genderRatio: Optional[str] = "50:50"
     ageRange: Any = None # Can be string or dict {from: 18, to: 65}
     remarks: Optional[str] = None
+    drtWashoutDate: Optional[Any] = None # Date or string
+    washoutPeriod: Optional[int] = 0 # Safety buffer in days
     status: Literal["upcoming", "ongoing", "completed", "archived", "ONGOING", "UPCOMING"] = "ONGOING"
     createdBy: Optional[str] = None
     createdAt: datetime = Field(default_factory=datetime.utcnow)

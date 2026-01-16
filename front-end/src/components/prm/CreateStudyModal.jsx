@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { X, Calendar as CalendarIcon, Users, Clock, AlertCircle } from 'lucide-react';
+import { X, Calendar as CalendarIcon, Users, Clock, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import MultiSelect from '../common/MultiSelect';
 
 // Simple API wrapper
@@ -43,7 +43,8 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
         genderRatio: { female: 50, male: 50, minor: 0 },
         ageRange: { from: 18, to: 65 },
         remarks: '',
-        drtWashoutDate: ''
+        drtWashoutDate: '',
+        washoutPeriod: ''
     });
 
     const [timelinePreviews, setTimelinePreviews] = useState({});
@@ -74,7 +75,8 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
                     genderRatio: initialData.genderRatio || { female: 50, male: 50, minor: 0 },
                     ageRange: initialData.ageRange || { from: 18, to: 65 },
                     remarks: initialData.remarks || '',
-                    drtWashoutDate: initialData.drtWashoutDate ? new Date(initialData.drtWashoutDate).toISOString().split('T')[0] : ''
+                    drtWashoutDate: initialData.drtWashoutDate ? new Date(initialData.drtWashoutDate).toISOString().split('T')[0] : '',
+                    washoutPeriod: initialData.washoutPeriod || ''
                 });
 
                 // Pre-fill Timeline from existing visits
@@ -98,7 +100,8 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
                     genderRatio: { female: 50, male: 50, minor: 0 },
                     ageRange: { from: 18, to: 65 },
                     remarks: '',
-                    drtWashoutDate: ''
+                    drtWashoutDate: '',
+                    washoutPeriod: ''
                 }));
                 setTimelinePreviews({});
             }
@@ -179,6 +182,51 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
         });
     };
 
+    const handleAddVisit = (studyId) => {
+        setTimelinePreviews(prev => {
+            const currentVisits = prev[studyId] || [];
+            // Default to tomorrow or day after last visit
+            let nextDate = new Date();
+            if (currentVisits.length > 0) {
+                const lastDate = new Date(currentVisits[currentVisits.length - 1].plannedDate);
+                if (!isNaN(lastDate)) {
+                    nextDate = new Date(lastDate);
+                    nextDate.setDate(nextDate.getDate() + 7); // Default 1 week later
+                }
+            } else if (date) {
+                nextDate = new Date(date);
+            }
+
+            const newVisit = {
+                plannedDate: nextDate.toISOString().split('T')[0],
+                visitLabel: 'New Visit',
+                color: '#8b5cf6', // Violet default
+                visitType: 'MANUAL',
+                status: 'UPCOMING'
+            };
+
+            return { ...prev, [studyId]: [...currentVisits, newVisit] };
+        });
+    };
+
+    const handleDeleteVisit = (studyId, index) => {
+        setTimelinePreviews(prev => {
+            const currentVisits = [...(prev[studyId] || [])];
+            currentVisits.splice(index, 1);
+            return { ...prev, [studyId]: currentVisits };
+        });
+    };
+
+    const handleVisitLabelChange = (studyId, index, newLabel) => {
+        setTimelinePreviews(prev => {
+            const studyVisits = [...(prev[studyId] || [])];
+            if (studyVisits[index]) {
+                studyVisits[index] = { ...studyVisits[index], visitLabel: newLabel };
+            }
+            return { ...prev, [studyId]: studyVisits };
+        });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -232,7 +280,7 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
         for (const study of formData.selectedStudies) {
             const visits = timelinePreviews[study._id];
             if (!visits || visits.length === 0) {
-                validationErrors.push(`No timeline generated for "${study.studyName}". Please wait for timeline to load.`);
+                validationErrors.push(`No timeline generated for "${study.studyName}". Please wait for timeline to load/add visits.`);
             }
 
             // Check visit dates are in order
@@ -295,6 +343,7 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
                         ageRange: formData.ageRange,
                         remarks: formData.remarks,
                         drtWashoutDate: formData.drtWashoutDate || null,
+                        washoutPeriod: parseInt(formData.washoutPeriod) || 0,
                         status: initialData.status // Preserve status
                     },
                     visits: customVisits
@@ -323,7 +372,8 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
                             genderRatio: formData.genderRatio,
                             ageRange: formData.ageRange,
                             remarks: formData.remarks,
-                            drtWashoutDate: formData.drtWashoutDate || null
+                            drtWashoutDate: formData.drtWashoutDate || null,
+                            washoutPeriod: parseInt(formData.washoutPeriod) || 0
                         },
                         visits: customVisits
                     };
@@ -621,19 +671,44 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
                                                 color: '#475569',
                                                 display: 'flex',
                                                 alignItems: 'center',
+                                                justifyContent: 'space-between',
                                                 gap: '10px'
                                             }}>
-                                                <span style={{
-                                                    background: '#ffffff',
-                                                    padding: '4px 10px',
-                                                    borderRadius: '6px',
-                                                    fontSize: '0.8rem',
-                                                    fontFamily: 'monospace',
-                                                    border: '1px solid #e2e8f0'
-                                                }}>
-                                                    {formData.enteredStudyCode || study.studyCode}
-                                                </span>
-                                                {study.studyName}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <span style={{
+                                                        background: '#ffffff',
+                                                        padding: '4px 10px',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.8rem',
+                                                        fontFamily: 'monospace',
+                                                        border: '1px solid #e2e8f0'
+                                                    }}>
+                                                        {formData.enteredStudyCode || study.studyCode}
+                                                    </span>
+                                                    {study.studyName}
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleAddVisit(study._id)}
+                                                    style={{
+                                                        background: '#ecfdf5',
+                                                        color: '#059669',
+                                                        border: '1px solid #a7f3d0',
+                                                        padding: '6px 12px',
+                                                        borderRadius: '8px',
+                                                        fontSize: '0.8rem',
+                                                        fontWeight: '600',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseEnter={e => e.target.style.background = '#d1fae5'}
+                                                    onMouseLeave={e => e.target.style.background = '#ecfdf5'}
+                                                >
+                                                    <Plus size={14} /> Add Visit
+                                                </button>
                                             </div>
                                             <div style={{
                                                 display: 'grid',
@@ -647,10 +722,44 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
                                                         background: '#ffffff',
                                                         border: '1px solid #e2e8f0',
                                                         borderLeft: `4px solid ${visit.color}`,
-                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                                                        position: 'relative',
+                                                        group: 'true'
                                                     }}>
-                                                        <div style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                                            {visit.visitLabel}
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                                            <input
+                                                                value={visit.visitLabel}
+                                                                onChange={(e) => handleVisitLabelChange(study._id, index, e.target.value)}
+                                                                style={{
+                                                                    fontSize: '0.7rem',
+                                                                    fontWeight: '700',
+                                                                    color: '#64748b',
+                                                                    textTransform: 'uppercase',
+                                                                    letterSpacing: '0.05em',
+                                                                    border: 'none',
+                                                                    background: 'transparent',
+                                                                    width: '100px',
+                                                                    outline: 'none',
+                                                                    textOverflow: 'ellipsis'
+                                                                }}
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleDeleteVisit(study._id, index)}
+                                                                style={{
+                                                                    border: 'none',
+                                                                    background: 'transparent',
+                                                                    color: '#ef4444',
+                                                                    cursor: 'pointer',
+                                                                    padding: '0',
+                                                                    opacity: 0.6,
+                                                                    transition: 'opacity 0.2s'
+                                                                }}
+                                                                onMouseEnter={e => e.target.style.opacity = '1'}
+                                                                onMouseLeave={e => e.target.style.opacity = '0.6'}
+                                                            >
+                                                                <Trash2 size={12} />
+                                                            </button>
                                                         </div>
                                                         <input
                                                             type="date"
@@ -676,18 +785,37 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
                             </div>
                         )}
 
-                        {/* DRT Date */}
+                        {/* DRT & Washout Config */}
                         <div style={{ ...cardStyle, border: 'none', background: 'transparent', boxShadow: 'none', padding: '0', marginBottom: '16px' }}>
-                            <label style={sectionLabelStyle}>DRT (Optional)</label>
-                            <div style={{ position: 'relative' }}>
-                                <CalendarIcon size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#ef4444', zIndex: 1 }} />
-                                <input
-                                    type="date"
-                                    name="drtWashoutDate"
-                                    value={formData.drtWashoutDate}
-                                    onChange={handleChange}
-                                    style={{ ...inputStyle, paddingLeft: '46px' }}
-                                />
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                                <div>
+                                    <label style={sectionLabelStyle}>DRT (Optional)</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <CalendarIcon size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#ef4444', zIndex: 1 }} />
+                                        <input
+                                            type="date"
+                                            name="drtWashoutDate"
+                                            value={formData.drtWashoutDate}
+                                            onChange={handleChange}
+                                            style={{ ...inputStyle, paddingLeft: '46px' }}
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style={sectionLabelStyle}>Washout Period (Days)</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <Clock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#6366f1', zIndex: 1 }} />
+                                        <input
+                                            type="number"
+                                            name="washoutPeriod"
+                                            placeholder="e.g. 90"
+                                            value={formData.washoutPeriod}
+                                            onChange={handleChange}
+                                            min="0"
+                                            style={{ ...inputStyle, paddingLeft: '46px' }}
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

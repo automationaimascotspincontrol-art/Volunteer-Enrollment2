@@ -60,7 +60,9 @@ async def get_calendar_events(
         color = "#fbbf24"  # Yellow for visits (T-2, T0, T+1, etc.)
         
         # Override with study status color if needed
-        if calculated_study_status == "UPCOMING":
+        if v.get("visitType") == "MANUAL" and v.get("color"):
+            color = v.get("color")
+        elif calculated_study_status == "UPCOMING":
             color = "#3b82f6"  # Blue for Upcoming studies
         elif calculated_study_status == "ONGOING":
             color = "#10b981"  # Green for Ongoing studies
