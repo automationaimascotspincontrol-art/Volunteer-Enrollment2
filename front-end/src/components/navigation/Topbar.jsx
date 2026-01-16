@@ -89,8 +89,93 @@ const Topbar = () => {
                         }
                     `}</style>
 
-                    {/* Main Nav (Dashboard, Search) - Hidden for PRM */}
-                    {user?.role !== 'prm' && (
+                    {/* Management Navigation - Only show VBoard, SBoard, Calendar, PRM Dashboard */}
+                    {user?.role === 'management' && (
+                        <>
+                            <NavLink
+                                to="/admin/dashboard"
+                                style={({ isActive }) => ({
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    padding: '0.6rem 1rem',
+                                    borderRadius: '10px',
+                                    textDecoration: 'none',
+                                    fontWeight: '600',
+                                    fontSize: '0.95rem',
+                                    transition: 'all 0.2s',
+                                    background: isActive ? 'var(--bg-panel)' : 'transparent',
+                                    color: isActive ? 'var(--primary)' : 'var(--text-muted)'
+                                })}
+                            >
+                                <LayoutDashboard size={18} />
+                                <span>VBoard</span>
+                            </NavLink>
+
+                            <NavLink
+                                to="/prm/volunteers"
+                                style={({ isActive }) => ({
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    padding: '0.6rem 1rem',
+                                    borderRadius: '10px',
+                                    textDecoration: 'none',
+                                    fontWeight: '600',
+                                    fontSize: '0.95rem',
+                                    transition: 'all 0.2s',
+                                    background: isActive ? 'var(--bg-panel)' : 'transparent',
+                                    color: isActive ? 'var(--primary)' : 'var(--text-muted)'
+                                })}
+                            >
+                                <Users size={18} />
+                                <span>SBoard</span>
+                            </NavLink>
+
+                            <NavLink
+                                to="/prm/calendar"
+                                style={({ isActive }) => ({
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    padding: '0.6rem 1rem',
+                                    borderRadius: '10px',
+                                    textDecoration: 'none',
+                                    fontWeight: '600',
+                                    fontSize: '0.95rem',
+                                    transition: 'all 0.2s',
+                                    background: isActive ? 'var(--bg-panel)' : 'transparent',
+                                    color: isActive ? 'var(--primary)' : 'var(--text-muted)'
+                                })}
+                            >
+                                <Calendar size={18} />
+                                <span>Calendar</span>
+                            </NavLink>
+
+                            <NavLink
+                                to="/prm/dashboard"
+                                style={({ isActive }) => ({
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    padding: '0.6rem 1rem',
+                                    borderRadius: '10px',
+                                    textDecoration: 'none',
+                                    fontWeight: '600',
+                                    fontSize: '0.95rem',
+                                    transition: 'all 0.2s',
+                                    background: isActive ? 'var(--bg-panel)' : 'transparent',
+                                    color: isActive ? 'var(--primary)' : 'var(--text-muted)'
+                                })}
+                            >
+                                <LayoutDashboard size={18} />
+                                <span>PRM Dashboard</span>
+                            </NavLink>
+                        </>
+                    )}
+
+                    {/* Main Nav (Dashboard, Search) - Hidden for PRM and Management */}
+                    {user?.role !== 'prm' && user?.role !== 'management' && (
                         <>
                             <NavLink
                                 to="/admin/dashboard"
@@ -241,8 +326,8 @@ const Topbar = () => {
                         </>
                     )}
 
-                    {/* PRM & Management Links */}
-                    {(user?.role === 'prm' || user?.role === 'management' || user?.role === 'game_master') && (
+                    {/* PRM Links - Only for PRM role */}
+                    {user?.role === 'prm' && (
                         <>
                             <NavLink
                                 to="/prm/dashboard"
@@ -306,7 +391,7 @@ const Topbar = () => {
                         </>
                     )}
 
-                    {user?.role !== 'prm' && (
+                    {user?.role !== 'prm' && user?.role !== 'management' && (
                         <NavLink
                             to="/register"
                             style={({ isActive }) => ({
@@ -443,7 +528,96 @@ const Topbar = () => {
                             </p>
                         </div>
 
-                        {user?.role !== 'prm' && (
+                        {/* Management Mobile Navigation - Only show VBoard, SBoard, Calendar, PRM Dashboard */}
+                        {user?.role === 'management' && (
+                            <>
+                                <NavLink
+                                    to="/admin/dashboard"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.75rem',
+                                        padding: '0.875rem 1rem',
+                                        borderRadius: '10px',
+                                        textDecoration: 'none',
+                                        fontWeight: '600',
+                                        fontSize: '0.95rem',
+                                        background: 'transparent',
+                                        color: 'var(--text-primary)',
+                                        border: '1px solid var(--border-color)'
+                                    }}
+                                >
+                                    <LayoutDashboard size={20} />
+                                    <span>VBoard</span>
+                                </NavLink>
+
+                                <NavLink
+                                    to="/prm/volunteers"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.75rem',
+                                        padding: '0.875rem 1rem',
+                                        borderRadius: '10px',
+                                        textDecoration: 'none',
+                                        fontWeight: '600',
+                                        fontSize: '0.95rem',
+                                        background: 'transparent',
+                                        color: 'var(--text-primary)',
+                                        border: '1px solid var(--border-color)'
+                                    }}
+                                >
+                                    <Users size={20} />
+                                    <span>SBoard</span>
+                                </NavLink>
+
+                                <NavLink
+                                    to="/prm/calendar"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.75rem',
+                                        padding: '0.875rem 1rem',
+                                        borderRadius: '10px',
+                                        textDecoration: 'none',
+                                        fontWeight: '600',
+                                        fontSize: '0.95rem',
+                                        background: 'transparent',
+                                        color: 'var(--text-primary)',
+                                        border: '1px solid var(--border-color)'
+                                    }}
+                                >
+                                    <Calendar size={20} />
+                                    <span>Calendar</span>
+                                </NavLink>
+
+                                <NavLink
+                                    to="/prm/dashboard"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.75rem',
+                                        padding: '0.875rem 1rem',
+                                        borderRadius: '10px',
+                                        textDecoration: 'none',
+                                        fontWeight: '600',
+                                        fontSize: '0.95rem',
+                                        background: 'transparent',
+                                        color: 'var(--text-primary)',
+                                        border: '1px solid var(--border-color)'
+                                    }}
+                                >
+                                    <LayoutDashboard size={20} />
+                                    <span>PRM Dashboard</span>
+                                </NavLink>
+                            </>
+                        )}
+
+                        {user?.role !== 'prm' && user?.role !== 'management' && (
                             <>
                                 <NavLink
                                     to="/admin/dashboard"
@@ -581,7 +755,7 @@ const Topbar = () => {
                         )}
 
                         {/* PRM Mobile Links */}
-                        {(user?.role === 'prm' || user?.role === 'management' || user?.role === 'game_master') && (
+                        {user?.role === 'prm' && (
                             <>
                                 <NavLink
                                     to="/prm/dashboard"

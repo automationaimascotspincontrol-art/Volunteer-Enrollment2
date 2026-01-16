@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
     try:
         settings.validate()
         await init_db()
-        print("✅ Database initialized and indexes created")
+        print("[OK] Database initialized and indexes created")
         
         # Debug: Print all routes
         print("\n--- Registered Routes ---")
@@ -45,14 +45,14 @@ async def lifespan(app: FastAPI):
                 print(f"Route: {route.path} [{','.join(route.methods)}]")
         print("-------------------------\n")
     except Exception as e:
-        print(f"❌ Startup failed: {e}")
+        print(f"[ERROR] Startup failed: {e}")
         raise
     
     yield
     
     # Shutdown: Clean up resources
     await close_db()
-    print("✅ Database connection closed")
+    print("[OK] Database connection closed")
 
 
 # ============ App Creation ============
