@@ -145,7 +145,7 @@ export const MultiSelect = ({
                                         />
                                         <div className="multiselect-option-content">
                                             <div className="multiselect-option-name">
-                                                {option.studyCode ? `${option.studyCode} - ` : ''}{option.studyName}
+                                                {option.studyName}{option.studyCode ? ` (${option.studyCode})` : ''}
                                             </div>
                                             <div className="multiselect-option-meta">{option.studyType}</div>
                                         </div>

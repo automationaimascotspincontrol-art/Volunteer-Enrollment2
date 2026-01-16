@@ -35,7 +35,7 @@ const RegistrationForm = () => {
             try {
                 const [volunteerRes, studiesRes] = await Promise.all([
                     volunteer ? Promise.resolve({ data: volunteer }) : api.get(`/volunteers/search/master?id=${id}`),
-                    api.get('/clinical/ongoing-studies')
+                    api.get('/clinical/clinical-studies')  // Changed to clinical-studies endpoint
                 ]);
 
                 let volData = volunteerRes.data;
@@ -241,10 +241,14 @@ const RegistrationForm = () => {
                                 name="study_assigned"
                                 value={formData.study_assigned}
                                 onChange={handleChange}
-                                options={clinicalStudies.map(s => ({
-                                    label: s.enteredStudyName || s.studyName || s.study_name || "Unnamed Study",
-                                    value: s.enteredStudyCode || s.studyInstanceCode || s.study_code
-                                }))}
+                                options={clinicalStudies.map(s => {
+                                    const studyName = s.enteredStudyName || s.studyName || s.study_name || "Unnamed Study";
+                                    const studyCode = s.enteredStudyCode || s.studyInstanceCode || s.study_code;
+                                    return {
+                                        label: studyCode ? `${studyName} (${studyCode})` : studyName,
+                                        value: studyCode
+                                    };
+                                })}
                                 required
                             />
                         </div>

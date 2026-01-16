@@ -42,10 +42,11 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
         volunteersPlanned: '',
         genderRatio: { female: 50, male: 50, minor: 0 },
         ageRange: { from: 18, to: 65 },
-        remarks: '',
-        drtWashoutDate: '',
-        washoutPeriod: ''
+        remarks: ''
     });
+
+    // Per-study DRT and Washout configuration: { [studyId]: { drtWashoutDate: '', washoutPeriod: '' } }
+    const [studyConfigs, setStudyConfigs] = useState({});
 
     const [timelinePreviews, setTimelinePreviews] = useState({});
 
@@ -74,9 +75,15 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
                     volunteersPlanned: initialData.volunteersPlanned || '',
                     genderRatio: initialData.genderRatio || { female: 50, male: 50, minor: 0 },
                     ageRange: initialData.ageRange || { from: 18, to: 65 },
-                    remarks: initialData.remarks || '',
-                    drtWashoutDate: initialData.drtWashoutDate ? new Date(initialData.drtWashoutDate).toISOString().split('T')[0] : '',
-                    washoutPeriod: initialData.washoutPeriod || ''
+                    remarks: initialData.remarks || ''
+                });
+
+                // Load per-study config for edit mode
+                setStudyConfigs({
+                    [initialData._id]: {
+                        drtWashoutDate: initialData.drtWashoutDate ? new Date(initialData.drtWashoutDate).toISOString().split('T')[0] : '',
+                        washoutPeriod: initialData.washoutPeriod || ''
+                    }
                 });
 
                 // Pre-fill Timeline from existing visits
@@ -99,10 +106,9 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
                     volunteersPlanned: '',
                     genderRatio: { female: 50, male: 50, minor: 0 },
                     ageRange: { from: 18, to: 65 },
-                    remarks: '',
-                    drtWashoutDate: '',
-                    washoutPeriod: ''
+                    remarks: ''
                 }));
+                setStudyConfigs({});
                 setTimelinePreviews({});
             }
         }
@@ -296,24 +302,25 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
             }
         }
 
-        // 7. DRT Date Validation (if provided)
-        if (formData.drtWashoutDate) {
-            const drtDate = new Date(formData.drtWashoutDate);
-            const studyStartDate = date ? new Date(date) : (initialData ? new Date(initialData.startDate) : null);
+        // 7. DRT Date Validation (if provided) - Check per study
+        for (const study of formData.selectedStudies) {
+            const config = studyConfigs[study._id] || {};
+            const drtDate = config.drtWashoutDate ? new Date(config.drtWashoutDate) : null;
 
-            if (studyStartDate && drtDate < studyStartDate) {
-                validationErrors.push('DRT washout date cannot be before study start date');
-            }
+            if (drtDate) {
+                const studyStartDate = date ? new Date(date) : (initialData ? new Date(initialData.startDate) : null);
 
-            // Check if DRT is at least after all visits
-            for (const study of formData.selectedStudies) {
+                if (studyStartDate && drtDate < studyStartDate) {
+                    validationErrors.push(`DRT washout date for "${study.studyName}" cannot be before study start date`);
+                }
+
+                // Check if DRT is at least after all visits for this study
                 const visits = timelinePreviews[study._id];
                 if (visits && visits.length > 0) {
                     const lastVisit = visits[visits.length - 1];
                     const lastVisitDate = new Date(lastVisit.plannedDate);
                     if (drtDate < lastVisitDate) {
-                        validationErrors.push('DRT washout date should be after the last study visit');
-                        break;
+                        validationErrors.push(`DRT washout date for "${study.studyName}" should be after the last study visit`);
                     }
                 }
             }
@@ -332,6 +339,7 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
             if (isEdit) {
                 const study = formData.selectedStudies[0]; // Should only be one in Edit
                 const customVisits = timelinePreviews[study._id];
+                const config = studyConfigs[study._id] || {};
 
                 const payload = {
                     studyInstance: {
@@ -342,8 +350,8 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
                         genderRatio: formData.genderRatio,
                         ageRange: formData.ageRange,
                         remarks: formData.remarks,
-                        drtWashoutDate: formData.drtWashoutDate || null,
-                        washoutPeriod: parseInt(formData.washoutPeriod) || 0,
+                        drtWashoutDate: config.drtWashoutDate || null,
+                        washoutPeriod: parseInt(config.washoutPeriod) || 0,
                         status: initialData.status // Preserve status
                     },
                     visits: customVisits
@@ -360,6 +368,7 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
 
                 const promises = formData.selectedStudies.map(async (studyMaster) => {
                     const customVisits = timelinePreviews[studyMaster._id];
+                    const config = studyConfigs[studyMaster._id] || {};
 
                     const payload = {
                         studyInstance: {
@@ -372,8 +381,8 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
                             genderRatio: formData.genderRatio,
                             ageRange: formData.ageRange,
                             remarks: formData.remarks,
-                            drtWashoutDate: formData.drtWashoutDate || null,
-                            washoutPeriod: parseInt(formData.washoutPeriod) || 0
+                            drtWashoutDate: config.drtWashoutDate || null,
+                            washoutPeriod: parseInt(config.washoutPeriod) || 0
                         },
                         visits: customVisits
                     };
@@ -389,9 +398,9 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
                     volunteersPlanned: '',
                     genderRatio: { female: 50, male: 50, minor: 0 },
                     ageRange: { from: 18, to: 65 },
-                    remarks: '',
-                    drtWashoutDate: ''
+                    remarks: ''
                 });
+                setStudyConfigs({});
                 setTimelinePreviews({});
 
                 if (onStudyCreated) onStudyCreated();
@@ -785,39 +794,90 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
                             </div>
                         )}
 
-                        {/* DRT & Washout Config */}
-                        <div style={{ ...cardStyle, border: 'none', background: 'transparent', boxShadow: 'none', padding: '0', marginBottom: '16px' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                                <div>
-                                    <label style={sectionLabelStyle}>DRT (Optional)</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <CalendarIcon size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#ef4444', zIndex: 1 }} />
-                                        <input
-                                            type="date"
-                                            name="drtWashoutDate"
-                                            value={formData.drtWashoutDate}
-                                            onChange={handleChange}
-                                            style={{ ...inputStyle, paddingLeft: '46px' }}
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label style={sectionLabelStyle}>Washout Period (Days)</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <Clock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#6366f1', zIndex: 1 }} />
-                                        <input
-                                            type="number"
-                                            name="washoutPeriod"
-                                            placeholder="e.g. 90"
-                                            value={formData.washoutPeriod}
-                                            onChange={handleChange}
-                                            min="0"
-                                            style={{ ...inputStyle, paddingLeft: '46px' }}
-                                        />
-                                    </div>
+                        {/* Per-Study DRT & Washout Config */}
+                        {formData.selectedStudies.length > 0 && (
+                            <div style={cardStyle}>
+                                <h3 style={{ fontSize: '1rem', fontWeight: '600', color: '#1e293b', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <AlertCircle size={20} color="#ef4444" /> DRT & Washout Configuration
+                                </h3>
+                                <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '16px', lineHeight: '1.5' }}>
+                                    Configure DRT date and washout period for each selected study individually.
+                                </p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    {formData.selectedStudies.map(study => {
+                                        const config = studyConfigs[study._id] || { drtWashoutDate: '', washoutPeriod: '' };
+                                        return (
+                                            <div key={study._id} style={{
+                                                padding: '16px',
+                                                borderRadius: '12px',
+                                                background: '#f8fafc',
+                                                border: '1px solid #e2e8f0'
+                                            }}>
+                                                <div style={{
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: '600',
+                                                    marginBottom: '12px',
+                                                    color: '#475569',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '10px'
+                                                }}>
+                                                    <span style={{
+                                                        background: '#ffffff',
+                                                        padding: '4px 10px',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.8rem',
+                                                        fontFamily: 'monospace',
+                                                        border: '1px solid #cbd5e1'
+                                                    }}>
+                                                        {formData.enteredStudyCode || study.studyCode}
+                                                    </span>
+                                                    {study.studyName}
+                                                </div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                                    <div>
+                                                        <label style={sectionLabelStyle}>DRT Date (Optional)</label>
+                                                        <div style={{ position: 'relative' }}>
+                                                            <CalendarIcon size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#ef4444', zIndex: 1 }} />
+                                                            <input
+                                                                type="date"
+                                                                value={config.drtWashoutDate}
+                                                                onChange={(e) => {
+                                                                    setStudyConfigs(prev => ({
+                                                                        ...prev,
+                                                                        [study._id]: { ...config, drtWashoutDate: e.target.value }
+                                                                    }));
+                                                                }}
+                                                                style={{ ...inputStyle, paddingLeft: '46px' }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label style={sectionLabelStyle}>Washout Period (Days)</label>
+                                                        <div style={{ position: 'relative' }}>
+                                                            <Clock size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#6366f1', zIndex: 1 }} />
+                                                            <input
+                                                                type="number"
+                                                                placeholder="e.g. 90"
+                                                                value={config.washoutPeriod}
+                                                                onChange={(e) => {
+                                                                    setStudyConfigs(prev => ({
+                                                                        ...prev,
+                                                                        [study._id]: { ...config, washoutPeriod: e.target.value }
+                                                                    }));
+                                                                }}
+                                                                min="0"
+                                                                style={{ ...inputStyle, paddingLeft: '46px' }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         <div style={{ ...cardStyle, border: 'none', background: 'transparent', boxShadow: 'none', padding: '0', marginBottom: '8px' }}>
                             <label style={sectionLabelStyle}>Remarks / Notes</label>

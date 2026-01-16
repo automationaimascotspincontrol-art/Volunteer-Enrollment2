@@ -360,30 +360,75 @@ async def get_volunteer_history(
     }
 
 
+@router.get("/clinical-studies")
+async def get_clinical_studies(
+    current_user: dict = Depends(deps.get_current_user)
+):
+    """Get all clinical study types for medical registration dropdown."""
+    
+    logger.info("🔍 Fetching clinical study types for medical registration...")
+    
+    # Query clinical_studies collection for active studies
+    studies_raw = await db.clinical_studies.find(
+        {"active": True}
+    ).sort("study_name", 1).to_list(length=200)
+    
+    logger.info(f"📚 Found {len(studies_raw)} clinical study types")
+    
+    # Convert _id to string for JSON serialization 
+    studies = []
+    for study in studies_raw:
+        if "_id" in study:
+            study["_id"] = str(study["_id"])
+            study["id"] = study["_id"]
+        
+        # Ensure consistent field names for frontend
+        if "study_code" in study:
+            study["studyCode"] = study["study_code"]
+            study["enteredStudyCode"] = study["study_code"]
+        if "study_name" in study:
+            study["studyName"] = study["study_name"]
+            study["enteredStudyName"] = study["study_name"]
+        
+        studies.append(study)
+    
+    logger.info(f"✅ Returning {len(studies)} clinical study types")
+    
+    return {
+        "studies": studies,
+        "total": len(studies)
+    }
+
+
 @router.get("/ongoing-studies")
 async def get_ongoing_studies(
     current_user: dict = Depends(deps.get_current_user)
 ):
-    """Get all ongoing and upcoming studies from study_instances (PRM calendar) for volunteer assignment."""
+    """Get all ongoing PRM study instances (with timeline) for volunteer assignment."""
+    
+    logger.info("🔍 Fetching PRM study instances for volunteer assignment...")
     
     # Query study_instances collection for studies that are NOT completed
-    # This includes ONGOING and UPCOMING status
     studies_raw = await db.study_instances.find(
         {
             "status": {"$nin": ["COMPLETED", "completed", "cancelled", "CANCELLED"]}
         }
     ).to_list(length=100)
     
+    logger.info(f"📅 Found {len(studies_raw)} PRM study instances")
+    
     # Convert _id to string for JSON serialization
     studies = []
     for study in studies_raw:
         if "_id" in study:
             study["_id"] = str(study["_id"])
-            # Also add as "id" for frontend compatibility
             study["id"] = study["_id"]
         studies.append(study)
+    
+    logger.info(f"✅ Returning {len(studies)} PRM study instances")
     
     return {
         "studies": studies,
         "total": len(studies)
     }
+
