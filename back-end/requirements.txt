@@ -9,3 +9,4 @@ pandas
 openpyxl
 requests
 slowapi
+google-generativeai>=0.3.0

@@ -22,7 +22,7 @@ from app.db import init_db
 from app.db.client import close_db
 from app.api.v1.routes import (
     auth, field, enrollment, clinical, admin, vboard, 
-    search, registration, prescreening, users, attendance, volunteers
+    search, registration, prescreening, users, attendance, volunteers, reports
 )
 from app.api.v1.routes import attendance_export
 # Import PRM module (refactored into sub-modules)
@@ -110,6 +110,7 @@ app.include_router(prm_router, prefix="/api/v1", tags=["PRM"])  # Modular PRM ro
 app.include_router(attendance.router, prefix="/api/v1/prm/attendance", tags=["Attendance"])
 app.include_router(attendance_export.router, prefix="/api/v1/prm/attendance", tags=["Attendance Export"])
 app.include_router(volunteers.router, prefix="/api/v1")
+app.include_router(reports.router, prefix="/api/v1")  # AI Reports endpoint
 
 
 # ============ Health Check ============

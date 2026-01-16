@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Search, UserPlus, LogOut, Shield, Menu, X, Calendar, PlusCircle, Users, Settings } from 'lucide-react';
+import { LayoutDashboard, Search, UserPlus, LogOut, Shield, Menu, X, Calendar, PlusCircle, Users, Settings, FileText } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ThemeToggle from '../../theme/ThemeToggle';
 import mascotLogo from '../../assets/mascot_logo.png';
@@ -170,6 +170,26 @@ const Topbar = () => {
                             >
                                 <LayoutDashboard size={18} />
                                 <span>PRM Dashboard</span>
+                            </NavLink>
+
+                            <NavLink
+                                to="/reports"
+                                style={({ isActive }) => ({
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    padding: '0.6rem 1rem',
+                                    borderRadius: '10px',
+                                    textDecoration: 'none',
+                                    fontWeight: '600',
+                                    fontSize: '0.95rem',
+                                    transition: 'all 0.2s',
+                                    background: isActive ? 'var(--bg-panel)' : 'transparent',
+                                    color: isActive ? 'var(--primary)' : 'var(--text-muted)'
+                                })}
+                            >
+                                <FileText size={18} />
+                                <span>Reports</span>
                             </NavLink>
                         </>
                     )}
@@ -387,6 +407,26 @@ const Topbar = () => {
                             >
                                 <Users size={18} />
                                 <span>SBoard</span>
+                            </NavLink>
+
+                            <NavLink
+                                to="/reports"
+                                style={({ isActive }) => ({
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    padding: '0.6rem 1rem',
+                                    borderRadius: '10px',
+                                    textDecoration: 'none',
+                                    fontWeight: '600',
+                                    fontSize: '0.95rem',
+                                    transition: 'all 0.2s',
+                                    background: isActive ? 'var(--bg-panel)' : 'transparent',
+                                    color: isActive ? 'var(--primary)' : 'var(--text-muted)'
+                                })}
+                            >
+                                <FileText size={18} />
+                                <span>Reports</span>
                             </NavLink>
                         </>
                     )}

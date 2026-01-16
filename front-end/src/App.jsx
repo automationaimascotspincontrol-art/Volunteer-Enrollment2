@@ -27,6 +27,7 @@ import RecruiterStudyView from './pages/recruiter/RecruiterStudyView';
 import PRMLogin from './pages/prm/PRMLogin'; // Import PRM Login
 import RecentEnrollment from './pages/recruiter/RecentEnrollment';
 import AssignedStudies from './pages/prm/AssignedStudies';
+import Reports from './pages/Reports'; // AI-Powered Reports
 
 // Home Logic
 const HomeDispatcher = () => {
@@ -105,6 +106,11 @@ const AppRoutes = () => {
             <Route path="/admin/full-search" element={<FullVolunteerSearch />} />
 
             <Route path="/admin/users" element={<UserManagement />} />
+
+            {/* AI Reports - Available to management, game_master, and prm */}
+            {(user?.role === 'management' || user?.role === 'game_master' || user?.role === 'prm') && (
+              <Route path="/reports" element={<Reports />} />
+            )}
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
