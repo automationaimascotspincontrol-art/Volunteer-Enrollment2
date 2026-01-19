@@ -527,3 +527,76 @@ async def update_assigned_study_status(
     except Exception as e:
         logger.error(f"Error updating assignment {assignment_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/volunteers/{volunteer_id}/active-studies")
+async def get_volunteer_active_studies(
+    volunteer_id: str,
+    user: UserBase = Depends(get_current_user)
+):
+    """
+    Get all active study assignments for a volunteer with washout period information.
+    Used for multi-study management and conflict detection.
+    """
+    try:
+        from app.utils.washout_calculations import calculate_washout_date
+        
+        # Find all assigned (active) studies for this volunteer
+        assignments = await AssignedStudy.find({
+            "volunteer_id": volunteer_id,
+            "status": "assigned"
+        }).to_list()
+        
+        results = []
+        for assignment in assignments:
+            # Get study instance details
+            study_instance = await db.study_instances.find_one({
+                "$or": [
+                    {"enteredStudyCode": assignment.study_code},
+                    {"studyInstanceCode": assignment.study_code}
+                ]
+            })
+            
+            study_info = {
+                "assignment_id": str(assignment.id),
+                "study_code": assignment.study_code,
+                "study_name": study_instance.get("name", "Unknown Study") if study_instance else "Unknown Study",
+                "assigned_date": assignment.created_at.isoformat() if assignment.created_at else None,
+                "status": assignment.status
+            }
+            
+            # Calculate washout information if study exists
+            if study_instance:
+                # Get end date and washout period
+                end_date = study_instance.get("endDate") or study_instance.get("drtWashoutDate")
+                washout_days = study_instance.get("washoutPeriod", 0)
+                
+                if isinstance(washout_days, str):
+                    try:
+                        washout_days = int(washout_days)
+                    except ValueError:
+                        washout_days = 0
+                
+                study_info["expected_end_date"] = end_date.isoformat() if end_date else None
+                study_info["washout_days"] = washout_days
+                
+                # Calculate washout complete date
+                washout_complete = calculate_washout_date(end_date, washout_days)
+                study_info["washout_complete_date"] = washout_complete.isoformat() if washout_complete else None
+            else:
+                study_info["expected_end_date"] = None
+                study_info["washout_days"] = 0
+                study_info["washout_complete_date"] = None
+            
+            results.append(study_info)
+        
+        return {
+            "success": True,
+            "volunteer_id": volunteer_id,
+            "active_studies_count": len(results),
+            "active_studies": results
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching active studies for {volunteer_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch active studies: {str(e)}")
