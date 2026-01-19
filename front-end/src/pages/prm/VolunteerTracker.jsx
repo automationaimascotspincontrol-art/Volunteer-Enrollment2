@@ -566,7 +566,25 @@ const VolunteerTracker = () => {
                                         </td>
                                         <td style={{ textAlign: 'right' }}>
                                             <button
-                                                onClick={() => toggleAttendance(vol.volunteer_id, vol.attendance_status === 'IN' ? 'OUT' : 'IN')}
+                                                onClick={() => {
+                                                    // Determine appropriate study code
+                                                    let studyCode = null;
+
+                                                    if (vol.attendance_status === 'IN') {
+                                                        // CRITICAL: When marking out, use the EXACT code they checked in with.
+                                                        studyCode = vol.study_code;
+                                                    } else {
+                                                        // When marking IN, prioritize selection or schedule
+                                                        if (selectedStudy && !['SCHEDULED_TODAY', 'ACTIVE_STUDIES'].includes(selectedStudy)) {
+                                                            studyCode = selectedStudy;
+                                                        }
+                                                        else {
+                                                            studyCode = vol.scheduled_study || vol.assigned_study || vol.study_code;
+                                                        }
+                                                    }
+
+                                                    toggleAttendance(vol.volunteer_id, vol.attendance_status, studyCode);
+                                                }}
                                                 style={{
                                                     padding: '0.4rem 0.8rem',
                                                     borderRadius: '8px',
