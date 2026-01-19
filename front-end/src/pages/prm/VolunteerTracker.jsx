@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Users, CheckCircle, Clock, Activity, RefreshCw, XCircle, ScanBarcode, ListCheck, Filter, CheckSquare, Square, Search, Calendar, CalendarClock } from 'lucide-react';
+import { Users, CheckCircle, Clock, Activity, RefreshCw, XCircle, ScanBarcode, ListCheck, Filter, CheckSquare, Square, Search, Calendar, CalendarClock, FileSpreadsheet } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import * as XLSX from 'xlsx';
 
 const StatCard = ({ title, value, subtitle, icon: Icon, colorVar, onClick }) => (
     <div
@@ -284,6 +285,73 @@ const VolunteerTracker = () => {
         v.volunteer_id?.toLowerCase().includes(approvedSearch.toLowerCase())
     );
 
+    // Export approved volunteers to Excel
+    const handleExportApprovedVolunteers = () => {
+        if (filteredApproved.length === 0) {
+            alert("No data to export");
+            return;
+        }
+
+        const dataToExport = filteredApproved.map(vol => ({
+            "Volunteer ID": vol.volunteer_id,
+            "Legacy ID": vol.legacy_id || 'N/A',
+            "Name": vol.name,
+            "Contact": vol.contact,
+            "Age": vol.age || 'N/A',
+            "Gender": vol.gender || 'N/A',
+            "Status": vol.attendance_status || 'OUT',
+            "Active Study": vol.attendance_status === 'IN' ? (vol.study_code || 'General') : 'N/A',
+            "Scheduled Study": vol.scheduled_study || 'N/A',
+            "Scheduled Visit": vol.scheduled_visit || 'N/A',
+            "Time In": vol.check_in_time ? new Date(vol.check_in_time).toLocaleString() : '-',
+            "Time Out": vol.check_out_time ? new Date(vol.check_out_time).toLocaleString() : '-',
+            "Last Approval Date": vol.approval_date ? new Date(vol.approval_date).toLocaleDateString() : '-'
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(dataToExport);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Attendance");
+
+        const dateStr = new Date().toISOString().split('T')[0];
+        const studyPrefix = selectedStudy ? `${selectedStudy}_` : 'All_Approved_';
+        XLSX.writeFile(wb, `PRM_${studyPrefix}Attendance_${dateStr}.xlsx`);
+    };
+
+    // Export study-wise attendance to Excel
+    const handleExportStudyAttendance = () => {
+        if (studyAttendance.length === 0) {
+            alert("No study attendance data to export");
+            return;
+        }
+
+        const wb = XLSX.utils.book_new();
+
+        studyAttendance.forEach(study => {
+            if (study.volunteers && study.volunteers.length > 0) {
+                const dataToExport = study.volunteers.map(vol => ({
+                    "Volunteer ID": vol.volunteer_id,
+                    "Name": vol.name,
+                    "Study Code": study.studyCode,
+                    "Status": "IN",
+                    "Time In": vol.check_in_time ? new Date(vol.check_in_time).toLocaleString() : '-',
+                    "Time Out": '-'
+                }));
+
+                const ws = XLSX.utils.json_to_sheet(dataToExport);
+                const sheetName = (study.studyCode || 'Study').substring(0, 31);
+                XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            }
+        });
+
+        if (wb.SheetNames.length === 0) {
+            alert("No active volunteers in studies to export");
+            return;
+        }
+
+        const dateStr = new Date().toISOString().split('T')[0];
+        XLSX.writeFile(wb, `PRM_Study_Attendance_${dateStr}.xlsx`);
+    };
+
     if (loading) {
         return (
             <div style={{ padding: '3rem', textAlign: 'center' }}>
@@ -462,6 +530,26 @@ const VolunteerTracker = () => {
                     </div>
 
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                            onClick={handleExportApprovedVolunteers}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                padding: '0.6rem 1rem',
+                                background: '#22c55e',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontSize: '0.9rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 4px rgba(34, 197, 94, 0.2)'
+                            }}
+                        >
+                            <FileSpreadsheet size={18} />
+                            Export Excel
+                        </button>
                         <input
                             type="search"
                             placeholder="Search list..."
@@ -494,7 +582,8 @@ const VolunteerTracker = () => {
                                 <th>Name</th>
                                 <th>Contact</th>
                                 <th>Status</th>
-                                <th>Time</th>
+                                <th>Time In</th>
+                                <th>Time Out</th>
                                 <th style={{ textAlign: 'right' }}>Action</th>
                             </tr>
                         </thead>
@@ -562,7 +651,10 @@ const VolunteerTracker = () => {
                                             )}
                                         </td>
                                         <td className="text-muted" style={{ fontSize: '0.85rem' }}>
-                                            {vol.check_in_time ? new Date(vol.check_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                            {vol.check_in_time ? new Date(vol.check_in_time).toLocaleString() : '-'}
+                                        </td>
+                                        <td className="text-muted" style={{ fontSize: '0.85rem' }}>
+                                            {vol.check_out_time ? new Date(vol.check_out_time).toLocaleString() : '-'}
                                         </td>
                                         <td style={{ textAlign: 'right' }}>
                                             <button
@@ -611,14 +703,36 @@ const VolunteerTracker = () => {
             {/* Study-Wise Attendance Section */}
             {studyAttendance.length > 0 && (
                 <div className="glass-card" style={{ marginTop: '2rem' }}>
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <h3 style={{ fontSize: '1.3rem', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Calendar size={22} color="var(--primary)" />
-                            Ongoing Studies - Attendance Tracking ({studyAttendance.length})
-                        </h3>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
-                            Volunteers assigned to active studies
-                        </p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <div>
+                            <h3 style={{ fontSize: '1.3rem', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Calendar size={22} color="var(--primary)" />
+                                Ongoing Studies - Attendance Tracking ({studyAttendance.length})
+                            </h3>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                                Volunteers assigned to active studies
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleExportStudyAttendance}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                padding: '0.6rem 1rem',
+                                background: '#22c55e',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontSize: '0.9rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 4px rgba(34, 197, 94, 0.2)'
+                            }}
+                        >
+                            <FileSpreadsheet size={18} />
+                            Export All Studies
+                        </button>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '1.5rem' }}>
@@ -711,6 +825,12 @@ const VolunteerTracker = () => {
                                                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
                                                                 {vol.volunteer_id}
                                                             </div>
+                                                            {vol.check_in_time && (
+                                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                                                                    <Clock size={12} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                                                                    {new Date(vol.check_in_time).toLocaleString()}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                             {vol.attendance_status === 'present' ? (

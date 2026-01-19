@@ -230,8 +230,16 @@ async def get_approved_volunteers(
             volunteer_id = vol.get("volunteer_id")
             basic_info = vol.get("basic_info", {})
             
-            # Check attendance status
-            attendance = await db.volunteer_attendance.find_one({
+            
+            # Check attendance status - fetch MOST RECENT record (active or not)
+            # This allows us to show historical check-in/out times
+            attendance = await db.volunteer_attendance.find_one(
+                {"volunteer_id": volunteer_id},
+                sort=[("check_in_time", -1)]  # Most recent first
+            )
+            
+            # Also check if there's an ACTIVE session
+            active_attendance = await db.volunteer_attendance.find_one({
                 "volunteer_id": volunteer_id,
                 "is_active": True
             })
@@ -246,9 +254,10 @@ async def get_approved_volunteers(
                 "contact": vol.get("contact", basic_info.get("contact", "N/A")),
                 "age": basic_info.get("age"),
                 "gender": basic_info.get("gender", basic_info.get("sex", "N/A")),
-                "attendance_status": "IN" if attendance else "OUT",
+                "attendance_status": "IN" if active_attendance else "OUT",
                 "check_in_time": attendance.get("check_in_time") if attendance else None,
-                "last_check_out": vol.get("last_check_out"),
+                "check_out_time": attendance.get("check_out_time") if attendance else None,
+                "study_code": active_attendance.get("study_code") if active_attendance else None,
                 "approval_date": vol.get("approval_date"),
                 "scheduled_visit": v_info["label"] if v_info else None,
                 "scheduled_study": v_info["study_code"] if v_info else None
