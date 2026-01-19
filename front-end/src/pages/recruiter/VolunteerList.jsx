@@ -504,7 +504,8 @@ const VolunteerList = () => {
                             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
                             options={[
                                 { label: 'All Statuses', value: '' },
-                                { label: 'Submitted', value: 'submitted' },
+                                { label: 'Screening', value: 'screening' },
+                                { label: 'Pre-screening', value: 'prescreening' },
                                 { label: 'Approved', value: 'approved' },
                                 { label: 'Rejected', value: 'rejected' }
                             ]}

@@ -44,9 +44,23 @@ const getStudyStatusBadge = (status) => {
 
 // --- Components ---
 
-const VolunteerCard = ({ vol, onDelete }) => {
+const VolunteerCard = ({ vol, onDelete, onStatusChange }) => {
+    const [showStatusMenu, setShowStatusMenu] = React.useState(false);
     const statusInfo = getStatusStyles(vol.status);
     const isWithdrawn = vol.status === 'withdrew';
+
+    const statusOptions = [
+        { value: 'pending', label: 'Pending', color: '#fef3c7', textColor: '#92400e' },
+        { value: 'completed', label: 'Completed', color: '#dbeafe', textColor: '#1e40af' },
+        { value: 'withdrew', label: 'Withdrew', color: '#f3f4f6', textColor: '#374151' }
+    ];
+
+    const handleStatusClick = (newStatus) => {
+        setShowStatusMenu(false);
+        if (newStatus !== vol.status && onStatusChange) {
+            onStatusChange(vol._id, newStatus);
+        }
+    };
 
     return (
         <div className="volunteer-card" style={{
@@ -61,7 +75,8 @@ const VolunteerCard = ({ vol, onDelete }) => {
             transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             opacity: isWithdrawn ? 0.7 : 1,
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'visible',
+            zIndex: showStatusMenu ? 9999 : 1  // Elevate entire card when menu is open
         }}>
             {/* Subtle gradient overlay */}
             <div style={{
@@ -71,7 +86,8 @@ const VolunteerCard = ({ vol, onDelete }) => {
                 width: '120px',
                 height: '100%',
                 background: `linear-gradient(90deg, transparent, ${statusInfo.bg}15)`,
-                pointerEvents: 'none'
+                pointerEvents: 'none',
+                zIndex: 0
             }} />
 
             {/* Avatar */}
@@ -115,20 +131,91 @@ const VolunteerCard = ({ vol, onDelete }) => {
                 </div>
             </div>
 
-            {/* Status Badge */}
-            <div style={{
-                background: statusInfo.bg,
-                color: statusInfo.text,
-                padding: '0.375rem 0.875rem',
-                borderRadius: '6px',
-                fontSize: '0.75rem',
-                fontWeight: '600',
-                textTransform: 'capitalize',
-                flexShrink: 0,
-                position: 'relative',
-                zIndex: 1
-            }}>
-                {statusInfo.label}
+            {/* Status Dropdown */}
+            <div style={{ position: 'relative' }}>
+                <button
+                    onClick={() => setShowStatusMenu(!showStatusMenu)}
+                    style={{
+                        background: statusInfo.bg,
+                        color: statusInfo.text,
+                        padding: '0.375rem 0.875rem',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        textTransform: 'capitalize',
+                        flexShrink: 0,
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                    }}
+                >
+                    {statusInfo.label}
+                    <span style={{ fontSize: '0.6rem' }}>▼</span>
+                </button>
+
+                {/* Dropdown Menu */}
+                {showStatusMenu && (
+                    <>
+                        <div
+                            onClick={() => setShowStatusMenu(false)}
+                            style={{
+                                position: 'fixed',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                zIndex: 9998
+                            }}
+                        />
+                        <div style={{
+                            position: 'absolute',
+                            top: '100%',
+                            right: 0,
+                            marginTop: '0.5rem',
+                            background: 'white',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '8px',
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                            minWidth: '140px',
+                            zIndex: 9999,
+                            overflow: 'hidden'
+                        }}>
+                            {statusOptions.map(option => (
+                                <button
+                                    key={option.value}
+                                    onClick={() => handleStatusClick(option.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.625rem 1rem',
+                                        border: 'none',
+                                        background: vol.status === option.value ? option.color : 'white',
+                                        color: vol.status === option.value ? option.textColor : '#64748b',
+                                        textAlign: 'left',
+                                        fontSize: '0.8125rem',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        display: 'block'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (vol.status !== option.value) {
+                                            e.target.style.background = '#f8fafc';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (vol.status !== option.value) {
+                                            e.target.style.background = 'white';
+                                        }
+                                    }}
+                                >
+                                    {option.label}
+                                </button>
+                            ))}
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* Delete Button */}
@@ -184,6 +271,16 @@ const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
         } catch (e) {
             console.error('Failed to delete:', e);
             alert("Failed to remove volunteer");
+        }
+    };
+
+    const handleStatusChange = async (volunteerId, newStatus) => {
+        try {
+            await api.patch(`/assigned-studies/${volunteerId}/status`, { status: newStatus });
+            onAssignmentUpdate();
+        } catch (e) {
+            console.error('Failed to update status:', e);
+            alert("Failed to update status");
         }
     };
 
@@ -448,6 +545,7 @@ const StudyCard = ({ study, assignments, onAssignmentUpdate }) => {
                                     key={vol._id}
                                     vol={vol}
                                     onDelete={handleVolunteerDelete}
+                                    onStatusChange={handleStatusChange}
                                 />
                             ))}
                         </div>

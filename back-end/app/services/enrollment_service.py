@@ -56,7 +56,7 @@ async def convert_field_draft_to_master(
         "field_area": field_visit_data.get("field_area"),
         "legacy_id": field_visit_data.get("legacy_id"),
         "current_stage": VolunteerStage.FIELD_VISIT.value,
-        "current_status": VolunteerStatus.SUBMITTED.value,
+        "current_status": "screening",  # Initial status in new three-stage workflow
         "audit": {
             "created_at": datetime.utcnow(),
             "created_by": user_id,

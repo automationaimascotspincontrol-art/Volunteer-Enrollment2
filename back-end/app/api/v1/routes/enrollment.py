@@ -89,13 +89,19 @@ async def get_recent_enrollments(
 ):
     """
     Get recent enrollments categorized by status.
-    Returns pre-screening (submitted) and approved volunteers.
+    Three-stage workflow: screening -> prescreening -> approved
     """
-    # Get recent pre-screening volunteers (submitted status)
-    prescreening = await db.volunteers_master.find(
-        {"current_status": "submitted"},
+    # Get recent screening volunteers (initial enrollment)
+    screening = await db.volunteers_master.find(
+        {"current_status": "screening"},
         {"_id": 0}
     ).sort("audit.created_at", -1).limit(30).to_list(length=30)
+    
+    # Get recent pre-screening volunteers (medically registered and fit)
+    prescreening = await db.volunteers_master.find(
+        {"current_status": "prescreening"},
+        {"_id": 0}
+    ).sort("audit.updated_at", -1).limit(30).to_list(length=30)
     
     # Get recent approved volunteers
     approved = await db.volunteers_master.find(
@@ -104,6 +110,56 @@ async def get_recent_enrollments(
     ).sort("audit.updated_at", -1).limit(30).to_list(length=30)
     
     return {
+        "screening": screening,
         "prescreening": prescreening,
         "approved": approved
+    }
+
+
+@router.post("/approve/{volunteer_id}")
+async def approve_volunteer(
+    volunteer_id: str,
+    current_user: dict = Depends(deps.get_current_user),
+):
+    """
+    Approve a pre-screening volunteer (final stage of three-stage workflow).
+    Transitions from prescreening -> approved status.
+    """
+    # Verify volunteer exists and is in prescreening status
+    volunteer = await db.volunteers_master.find_one({"volunteer_id": volunteer_id})
+    if not volunteer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Volunteer {volunteer_id} not found"
+        )
+    
+    if volunteer.get("current_status") != "prescreening":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Volunteer must be in prescreening status to approve. Current status: {volunteer.get('current_status')}"
+        )
+    
+    # Update status to approved
+    from datetime import datetime
+    result = await db.volunteers_master.update_one(
+        {"volunteer_id": volunteer_id},
+        {
+            "$set": {
+                "current_status": "approved",
+                "audit.updated_at": datetime.utcnow(),
+                "audit.updated_by": current_user.get("name", current_user.get("username"))
+            }
+        }
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to approve volunteer"
+        )
+    
+    return {
+        "message": f"Volunteer {volunteer_id} approved successfully",
+        "volunteer_id": volunteer_id,
+        "status": "approved"
     }

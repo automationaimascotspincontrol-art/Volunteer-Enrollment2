@@ -34,34 +34,21 @@ class ApprovalStatusUpdate(BaseModel):
 async def get_volunteer_stats(current_user: dict = Depends(get_current_user)):
     """
     Get live volunteer statistics for dashboard.
-    Returns counts for pre-registration, medical status, approved, and checked in today.
+    Returns counts for three-stage enrollment workflow: screening → prescreening → approved.
     """
     try:
-        # Get all volunteers from the volunteers collection
-        # For now, using mock data structure
-        # TODO: Adjust based on actual volunteers schema
-        
         today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
         
-        # Count volunteers by status from volunteers_master
-        pre_registration_count = await db.volunteers_master.count_documents({
-            "current_stage": {"$in": ["pre_screening", "pending"]}
+        # Three-stage enrollment counts
+        screening_count = await db.volunteers_master.count_documents({
+            "current_status": "screening"
         })
         
-        # Count volunteers assigned to study (Medical Fit card) -> Assigned Studies
-        # Using distinct volunteer_ids from assigned_studies
-        distinct_assigned_studies = await db.assigned_studies.distinct(
-            "volunteer_id", 
-            {"status": "assigned"}
-        )
-        medical_fit_count = len(distinct_assigned_studies)
-        
-        medical_unfit_count = await db.volunteers_master.count_documents({
-            "medical_status": "unfit"
+        prescreening_count = await db.volunteers_master.count_documents({
+            "current_status": "prescreening"
         })
         
         approved_count = await db.volunteers_master.count_documents({
-            "current_stage": "registered",
             "current_status": "approved"
         })
         
@@ -71,21 +58,31 @@ async def get_volunteer_stats(current_user: dict = Depends(get_current_user)):
             "check_in_time": {"$gte": today}
         })
         
+        # Legacy fields kept for backward compatibility
+        pre_registration_count = screening_count + prescreening_count
+        
         return {
-            "preRegistration": pre_registration_count,
-            "medicalFit": medical_fit_count,
-            "medicalUnfit": medical_unfit_count,
+            "screening": screening_count,
+            "prescreening": prescreening_count,
             "approved": approved_count,
-            "checkedInToday": checked_in_today
+            "checkedInToday": checked_in_today,
+            # Legacy fields
+            "preRegistration": pre_registration_count,
+            "medicalFit": prescreening_count,
+            "medicalUnfit": 0
         }
     except Exception as e:
+        print(f"Error fetching stats: {e}")
         # Return mock data if collection doesn't exist yet
         return {
-            "preRegistration": 45,
-            "medicalFit": 12,
-            "medicalUnfit": 3,
-            "approved": 28,
-            "checkedInToday": 8
+            "screening": 15,
+            "prescreening": 8,
+            "approved": 27,
+            "checkedInToday": 0,
+            # Legacy
+            "preRegistration": 23,
+            "medicalFit": 8,
+            "medicalUnfit": 0
         }
 
 
@@ -484,3 +481,75 @@ async def update_approval_status(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update approval status: {str(e)}")
+
+
+@router.get("/study-attendance")
+async def get_study_attendance(current_user: dict = Depends(get_current_user)):
+    """
+    Get ongoing studies with assigned volunteers for attendance tracking.
+    Shows volunteers assigned to active studies with their information.
+    """
+    try:
+        # Find ongoing studies from assigned_studies collection
+        # Group by study_code to get unique studies
+        pipeline = [
+            {"$match": {"status": {"$in": ["assigned", "active"]}}},
+            {"$group": {
+                "_id": "$study_code",
+                "study_id": {"$first": "$study_id"},
+                "study_name": {"$first": "$study_name"},
+                "volunteers": {"$push": "$volunteer_id"}
+            }},
+            {"$limit": 20}
+        ]
+        
+        studies_cursor = db.assigned_studies.aggregate(pipeline)
+        studies_grouped = await studies_cursor.to_list(length=20)
+        
+        result = []
+        
+        for study_group in studies_grouped:
+            study_code = study_group.get("_id", "Unknown")
+            study_name = study_group.get("study_name", "Unknown Study")
+            volunteer_ids = study_group.get("volunteers", [])
+            
+            volunteers_data = []
+            
+            for volunteer_id in volunteer_ids[:50]:  # Limit to 50 volunteers per study
+                # Get volunteer details
+                volunteer = await db.volunteers_master.find_one({
+                    "volunteer_id": volunteer_id
+                })
+                
+                if not volunteer:
+                    continue
+                
+                basic_info = volunteer.get("basic_info", {})
+                
+                # Get attendance status
+                attendance = await db.volunteer_attendance.find_one({
+                    "volunteer_id": volunteer_id,
+                    "is_active": True
+                })
+                
+                volunteers_data.append({
+                    "volunteer_id": volunteer_id,
+                    "name": basic_info.get("name", "Unknown"),
+                    "contact": basic_info.get("contact", "N/A"),
+                    "attendance_status": "present" if attendance else "absent",
+                    "last_attendance": attendance.get("check_in_time").isoformat() if attendance and attendance.get("check_in_time") else None
+                })
+            
+            if volunteers_data:
+                result.append({
+                    "study_code": study_code,
+                    "study_name": study_name,
+                    "study_type": "Clinical",  # Default type
+                    "volunteers": volunteers_data
+                })
+        
+        return {"studies": result}
+        
+    except Exception as e:
+        print(f"Error fetching study attendance: {e}")
+        return {"studies": []}

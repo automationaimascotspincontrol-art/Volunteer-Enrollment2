@@ -41,12 +41,12 @@ const VolunteerTracker = () => {
 
     // Stats & Data
     const [stats, setStats] = useState({
-        preRegistration: 0,
-        medicalFit: 0,
-        medicalUnfit: 0,
+        screening: 0,
+        prescreening: 0,
         approved: 0,
         checkedInToday: 0
     });
+    const [studyAttendance, setStudyAttendance] = useState([]);
     const [preRegVolunteers, setPreRegVolunteers] = useState([]);
     const [approvedVolunteers, setApprovedVolunteers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -61,11 +61,17 @@ const VolunteerTracker = () => {
     // Search states
     const [preRegSearch, setPreRegSearch] = useState('');
     const [approvedSearch, setApprovedSearch] = useState('');
+    const [studySearches, setStudySearches] = useState({}); // {studyCode: searchText}
+    const [visibleCounts, setVisibleCounts] = useState({}); // {studyCode: count}
 
     useEffect(() => {
         fetchStudies();
         fetchData();
-        const interval = setInterval(fetchData, 30000);
+        fetchStudyAttendance();
+        const interval = setInterval(() => {
+            fetchData();
+            fetchStudyAttendance();
+        }, 30000);
         return () => clearInterval(interval);
     }, []);
 
@@ -117,6 +123,17 @@ const VolunteerTracker = () => {
         }
     };
 
+    const fetchStudyAttendance = async () => {
+        try {
+            const headers = { Authorization: `Bearer ${token}` };
+            const response = await axios.get('http://localhost:8000/api/v1/volunteers/study-attendance', { headers });
+            setStudyAttendance(response.data.studies || []);
+        } catch (err) {
+            console.error('Failed to fetch study attendance', err);
+            setStudyAttendance([]);
+        }
+    };
+
     const toggleAttendance = async (volunteerId, currentStatus) => {
         try {
             const action = currentStatus === 'IN' ? 'OUT' : 'IN';
@@ -124,7 +141,9 @@ const VolunteerTracker = () => {
                 { volunteer_id: volunteerId, action },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
+            // Refresh both approved volunteers and study attendance
             fetchData();
+            fetchStudyAttendance();
         } catch (err) {
             console.error('Failed to toggle attendance', err);
             alert('Failed to update attendance');
@@ -225,6 +244,24 @@ const VolunteerTracker = () => {
         } catch (err) {
             alert('Failed to delete volunteer');
         }
+    };
+
+    // Helper function to filter volunteers in a study by search
+    const getFilteredVolunteers = (volunteers, studyCode) => {
+        const searchTerm = studySearches[studyCode] || '';
+        if (!searchTerm) return volunteers;
+
+        return volunteers.filter(vol =>
+            vol.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            vol.volunteer_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            vol.contact?.includes(searchTerm)
+        );
+    };
+
+    // Helper to get visible volunteer count for a study
+    const getVisibleCount = (studyCode, totalCount) => {
+        const defaultShow = 10; // Show 10 volunteers initially
+        return visibleCounts[studyCode] || Math.min(defaultShow, totalCount);
     };
 
     // Filter volunteers based on search
@@ -357,16 +394,41 @@ const VolunteerTracker = () => {
                 </div>
             </div>
 
-            {/* Stats Cards Row */}
+            {/* Stats Cards Row - Three-Stage Enrollment */}
             <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                 gap: '1rem',
                 marginBottom: '2rem'
             }}>
-                <StatCard title="Checked In" value={stats.checkedInToday} subtitle="Active Today" icon={Activity} colorVar="--accent" />
-                <StatCard title="Approved" value={stats.approved} subtitle="Total Pool" icon={CheckCircle} colorVar="--chart-purple" />
-                <StatCard title="Pre-Reg" value={stats.preRegistration} subtitle="Processing" icon={Users} colorVar="--chart-blue" />
+                <StatCard
+                    title="Screening"
+                    value={stats.screening || 0}
+                    subtitle="Initial Enrollment"
+                    icon={Users}
+                    colorVar="--chart-blue"
+                />
+                <StatCard
+                    title="Pre-screening"
+                    value={stats.prescreening || 0}
+                    subtitle="Medically Fit"
+                    icon={Clock}
+                    colorVar="--accent"
+                />
+                <StatCard
+                    title="Approved"
+                    value={stats.approved || 0}
+                    subtitle="Final Approval"
+                    icon={CheckCircle}
+                    colorVar="--chart-purple"
+                />
+                <StatCard
+                    title="Checked In"
+                    value={stats.checkedInToday || 0}
+                    subtitle="Active Today"
+                    icon={Activity}
+                    colorVar="--success"
+                />
             </div>
 
             {/* Approved Volunteers Table */}
@@ -522,6 +584,206 @@ const VolunteerTracker = () => {
                     </table>
                 </div>
             </div>
+
+            {/* Study-Wise Attendance Section */}
+            {studyAttendance.length > 0 && (
+                <div className="glass-card" style={{ marginTop: '2rem' }}>
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <h3 style={{ fontSize: '1.3rem', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Calendar size={22} color="var(--primary)" />
+                            Ongoing Studies - Attendance Tracking ({studyAttendance.length})
+                        </h3>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                            Volunteers assigned to active studies
+                        </p>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '1.5rem' }}>
+                        {studyAttendance.map((study, idx) => (
+                            <div key={idx} style={{
+                                padding: '1.5rem',
+                                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)',
+                                borderRadius: '16px',
+                                border: '1px solid rgba(99, 102, 241, 0.2)',
+                                transition: 'all 0.3s'
+                            }}>
+                                {/* Study Header */}
+                                <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(99, 102, 241, 0.15)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                        <span style={{
+                                            padding: '0.3rem 0.7rem',
+                                            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                                            color: 'white',
+                                            borderRadius: '8px',
+                                            fontSize: '0.85rem',
+                                            fontWeight: '700',
+                                            fontFamily: 'monospace'
+                                        }}>
+                                            {study.study_code}
+                                        </span>
+                                        <span style={{
+                                            padding: '0.2rem 0.6rem',
+                                            background: 'rgba(16, 185, 129, 0.1)',
+                                            color: '#10b981',
+                                            borderRadius: '6px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '600'
+                                        }}>
+                                            {study.study_type}
+                                        </span>
+                                    </div>
+                                    <h4 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0, color: 'var(--text-primary)' }}>
+                                        {study.study_name}
+                                    </h4>
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '0.3rem 0 0 0' }}>
+                                        {study.volunteers.length} volunteer{study.volunteers.length !== 1 ? 's' : ''} assigned
+                                    </p>
+                                </div>
+
+                                {/* Search Bar for this Study */}
+                                {study.volunteers.length > 5 && (
+                                    <div style={{ marginBottom: '1rem' }}>
+                                        <input
+                                            type="search"
+                                            placeholder="Search volunteers..."
+                                            value={studySearches[study.study_code] || ''}
+                                            onChange={(e) => setStudySearches({ ...studySearches, [study.study_code]: e.target.value })}
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.6rem 1rem',
+                                                borderRadius: '10px',
+                                                border: '1px solid rgba(99, 102, 241, 0.2)',
+                                                backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                                                fontSize: '0.9rem',
+                                                outline: 'none'
+                                            }}
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Volunteers List */}
+                                {(() => {
+                                    const filteredVols = getFilteredVolunteers(study.volunteers, study.study_code);
+                                    const visibleCount = getVisibleCount(study.study_code, filteredVols.length);
+                                    const visibleVols = filteredVols.slice(0, visibleCount);
+
+                                    return (
+                                        <>
+                                            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                                {visibleVols.map((vol, vIdx) => (
+                                                    <div key={vIdx} style={{
+                                                        padding: '0.75rem',
+                                                        background: 'rgba(255, 255, 255, 0.5)',
+                                                        borderRadius: '10px',
+                                                        marginBottom: '0.5rem',
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        border: '1px solid rgba(99, 102, 241, 0.1)'
+                                                    }}>
+                                                        <div style={{ flex: 1 }}>
+                                                            <div style={{ fontWeight: '600', fontSize: '0.95rem', marginBottom: '0.2rem' }}>
+                                                                {vol.name}
+                                                            </div>
+                                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                                                                {vol.volunteer_id}
+                                                            </div>
+                                                        </div>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                            {vol.attendance_status === 'present' ? (
+                                                                <span style={{
+                                                                    fontSize: '0.75rem',
+                                                                    padding: '0.3rem 0.6rem',
+                                                                    background: '#10b98120',
+                                                                    color: '#10b981',
+                                                                    borderRadius: '6px',
+                                                                    fontWeight: '700'
+                                                                }}>
+                                                                    🟢 Present
+                                                                </span>
+                                                            ) : (
+                                                                <span style={{
+                                                                    fontSize: '0.75rem',
+                                                                    padding: '0.3rem 0.6rem',
+                                                                    background: '#f1f5f9',
+                                                                    color: '#64748b',
+                                                                    borderRadius: '6px',
+                                                                    fontWeight: '600'
+                                                                }}>
+                                                                    ⚪ Absent
+                                                                </span>
+                                                            )}
+                                                            <button
+                                                                onClick={() => toggleAttendance(vol.volunteer_id, vol.attendance_status === 'present' ? 'IN' : 'OUT')}
+                                                                style={{
+                                                                    padding: '0.3rem 0.6rem',
+                                                                    borderRadius: '6px',
+                                                                    border: '1px solid var(--border-color)',
+                                                                    fontWeight: '600',
+                                                                    fontSize: '0.75rem',
+                                                                    cursor: 'pointer',
+                                                                    background: 'white',
+                                                                    color: vol.attendance_status === 'present' ? '#ef4444' : '#10b981',
+                                                                    borderColor: vol.attendance_status === 'present' ? '#ef4444' : '#10b981'
+                                                                }}
+                                                            >
+                                                                {vol.attendance_status === 'present' ? 'Mark Out' : 'Mark In'}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* Show More Button */}
+                                            {filteredVols.length > visibleCount && (
+                                                <button
+                                                    onClick={() => setVisibleCounts({ ...visibleCounts, [study.study_code]: visibleCount + 20 })}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '0.6rem',
+                                                        marginTop: '0.5rem',
+                                                        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: '8px',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.85rem'
+                                                    }}
+                                                >
+                                                    Show More ({filteredVols.length - visibleCount} remaining)
+                                                </button>
+                                            )}
+
+                                            {/* Show Less Button */}
+                                            {visibleCount > 10 && filteredVols.length > 10 && (
+                                                <button
+                                                    onClick={() => setVisibleCounts({ ...visibleCounts, [study.study_code]: 10 })}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '0.6rem',
+                                                        marginTop: '0.5rem',
+                                                        background: 'white',
+                                                        color: '#6366f1',
+                                                        border: '1px solid #6366f1',
+                                                        borderRadius: '8px',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.85rem'
+                                                    }}
+                                                >
+                                                    Show Less
+                                                </button>
+                                            )}
+                                        </>
+                                    );
+                                })()}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
 
             {/* Bulk Actions Floating Bar */}
             {selectedVolunteers.length > 0 && (

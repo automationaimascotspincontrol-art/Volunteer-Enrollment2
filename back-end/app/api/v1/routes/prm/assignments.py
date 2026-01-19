@@ -185,6 +185,50 @@ async def delete_assigned_study(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.patch("/assigned-studies/{assignment_id}/status")
+async def update_assignment_status(
+    assignment_id: str,
+    payload: Dict[str, Any] = Body(...),
+    user: UserBase = Depends(get_current_user)
+):
+    """
+    Update the status of a volunteer assignment (pending, completed, withdrew).
+    """
+    try:
+        new_status = payload.get("status", "").lower()
+        
+        if new_status not in ["pending", "completed", "withdrew"]:
+            raise HTTPException(status_code=400, detail="Invalid status. Must be: pending, completed, or withdrew")
+        
+        # Try to find assignment by ObjectId
+        assignment = None
+        try:
+            obj_id = PydanticObjectId(assignment_id)
+            assignment = await AssignedStudy.get(obj_id)
+        except Exception as e:
+            logger.debug(f"ObjectId lookup failed: {e}")
+            # Try alternative string ID lookup
+            assignment = await AssignedStudy.find_one({"_id": assignment_id})
+        
+        if not assignment:
+            raise HTTPException(status_code=404, detail="Assignment not found")
+        
+        # Update assignment
+        old_status = assignment.fitness_status
+        assignment.fitness_status = new_status
+        assignment.updated_at = datetime.now()
+        await assignment.save()
+        
+        logger.info(f"Assignment {assignment_id} status updated from {old_status} to {new_status} by {user.get('username', 'unknown')}")
+        
+        return {"success": True, "message": f"Status updated to {new_status}", "status": new_status}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating assignment status: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update status")
+
+
 @router.get("/assigned-studies/export/{study_code}")
 async def export_study_specific(
     study_code: str,

@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api/api';
-import { Users, CheckCircle, Clock, Calendar, X, ArrowRight, Phone, MapPin, User, Cake, Briefcase, AlertCircle, Search } from 'lucide-react';
+import { Users, CheckCircle, Clock, Calendar, X, ArrowRight, Phone, MapPin, User, Cake, Briefcase, AlertCircle, Search, FileText, UserCheck } from 'lucide-react';
 
 const RecentEnrollment = () => {
-    const [data, setData] = useState({ prescreening: [], approved: [] });
+    const [data, setData] = useState({ screening: [], prescreening: [], approved: [] });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [selectedVolunteer, setSelectedVolunteer] = useState(null);
+    const [screeningSearch, setScreeningSearch] = useState('');
     const [prescreeningSearch, setPrescreeningSearch] = useState('');
     const [approvedSearch, setApprovedSearch] = useState('');
     const navigate = useNavigate();
@@ -37,127 +38,161 @@ const RecentEnrollment = () => {
         });
     };
 
-    const VolunteerCard = ({ volunteer, status }) => (
-        <div className="glass-card" style={{
-            padding: '1.25rem',
-            marginBottom: '1rem',
-            borderLeft: `4px solid ${status === 'approved' ? '#10b981' : '#f59e0b'}`,
-            transition: 'all 0.3s ease',
-            cursor: 'pointer',
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)',
-            backdropFilter: 'blur(10px)',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.08)',
-            position: 'relative',
-            overflow: 'hidden'
-        }}
-            onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.12)';
-            }}
-            onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.08)';
-            }}
-        >
-            {/* Status Badge */}
-            <div style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                padding: '0.35rem 0.75rem',
-                borderRadius: '20px',
-                fontSize: '0.7rem',
-                fontWeight: '700',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                background: status === 'approved' ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #f59e0b, #d97706)',
-                color: 'white',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-            }}>
-                {status === 'approved' ? '✓ Approved' : '⏱ Pending'}
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', paddingRight: '6rem' }}>
-                <div style={{ flex: 1 }}>
-                    <h3 style={{
-                        fontSize: '1.2rem',
-                        fontWeight: '700',
-                        marginBottom: '0.75rem',
-                        color: '#1e293b',
-                        letterSpacing: '-0.5px'
-                    }}>
-                        {volunteer.basic_info?.name || 'N/A'}
-                    </h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem', fontSize: '0.85rem', color: '#64748b', marginBottom: '0.75rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <User size={14} style={{ color: '#667eea' }} />
-                            <span><strong style={{ color: '#334155' }}>ID:</strong> {volunteer.volunteer_id}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <Phone size={14} style={{ color: '#10b981' }} />
-                            <span><strong style={{ color: '#334155' }}>Contact:</strong> {volunteer.contact || volunteer.basic_info?.contact}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <Users size={14} style={{ color: '#ec4899' }} />
-                            <span><strong style={{ color: '#334155' }}>Gender:</strong> {volunteer.basic_info?.gender}</span>
-                        </div>
-                    </div>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.4rem',
-                        fontSize: '0.8rem',
+    const VolunteerCard = ({ volunteer, status }) => {
+        const getStatusConfig = () => {
+            switch (status) {
+                case 'screening':
+                    return {
+                        color: '#6366f1',
+                        bg: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                        label: '📋 Screening'
+                    };
+                case 'prescreening':
+                    return {
+                        color: '#f59e0b',
+                        bg: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                        label: '⏱ Pre-screening'
+                    };
+                case 'approved':
+                    return {
+                        color: '#10b981',
+                        bg: 'linear-gradient(135deg, #10b981, #059669)',
+                        label: '✓ Approved'
+                    };
+                default:
+                    return {
                         color: '#94a3b8',
-                        padding: '0.5rem 0.75rem',
-                        background: 'rgba(99, 102, 241, 0.05)',
-                        borderRadius: '8px',
-                        width: 'fit-content'
-                    }}>
-                        <Calendar size={14} style={{ color: '#667eea' }} />
-                        Enrolled: {formatDate(volunteer.audit?.created_at)}
-                    </div>
-                </div>
-            </div>
+                        bg: '#94a3b8',
+                        label: status
+                    };
+            }
+        };
 
-            <button
-                onClick={() => setSelectedVolunteer(volunteer)}
-                style={{
-                    position: 'absolute',
-                    bottom: '1.25rem',
-                    right: '1.25rem',
-                    padding: '0.65rem 1.25rem',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '10px',
-                    fontSize: '0.85rem',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                }}
+        const statusConfig = getStatusConfig();
+
+        return (
+            <div className="glass-card" style={{
+                padding: '1.25rem',
+                marginBottom: '1rem',
+                borderLeft: `4px solid ${statusConfig.color}`,
+                transition: 'all 0.3s ease',
+                cursor: 'pointer',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 4px 15px rgba(0,0,0,0.08)',
+                position: 'relative',
+                overflow: 'hidden'
+            }}
                 onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                    e.currentTarget.style.boxShadow = '0 6px 18px rgba(102, 126, 234, 0.4)';
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.12)';
                 }}
                 onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.08)';
                 }}
             >
-                View Details
-                <ArrowRight size={16} />
-            </button>
-        </div>
-    );
+                {/* Status Badge */}
+                <div style={{
+                    position: 'absolute',
+                    top: '1rem',
+                    right: '1rem',
+                    padding: '0.35rem 0.75rem',
+                    borderRadius: '20px',
+                    fontSize: '0.7rem',
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    background: statusConfig.bg,
+                    color: 'white',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                }}>
+                    {statusConfig.label}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', paddingRight: '6rem' }}>
+                    <div style={{ flex: 1 }}>
+                        <h3 style={{
+                            fontSize: '1.2rem',
+                            fontWeight: '700',
+                            marginBottom: '0.75rem',
+                            color: '#1e293b',
+                            letterSpacing: '-0.5px'
+                        }}>
+                            {volunteer.basic_info?.name || 'N/A'}
+                        </h3>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem', fontSize: '0.85rem', color: '#64748b', marginBottom: '0.75rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <User size={14} style={{ color: '#667eea' }} />
+                                <span><strong style={{ color: '#334155' }}>ID:</strong> {volunteer.volunteer_id}</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <Phone size={14} style={{ color: '#10b981' }} />
+                                <span><strong style={{ color: '#334155' }}>Contact:</strong> {volunteer.contact || volunteer.basic_info?.contact}</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <Users size={14} style={{ color: '#ec4899' }} />
+                                <span><strong style={{ color: '#334155' }}>Gender:</strong> {volunteer.basic_info?.gender}</span>
+                            </div>
+                        </div>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            fontSize: '0.8rem',
+                            color: '#94a3b8',
+                            padding: '0.5rem 0.75rem',
+                            background: 'rgba(99, 102, 241, 0.05)',
+                            borderRadius: '8px',
+                            width: 'fit-content'
+                        }}>
+                            <Calendar size={14} style={{ color: '#667eea' }} />
+                            Enrolled: {formatDate(volunteer.audit?.created_at)}
+                        </div>
+                    </div>
+                </div>
+
+                <button
+                    onClick={() => setSelectedVolunteer(volunteer)}
+                    style={{
+                        position: 'absolute',
+                        bottom: '1.25rem',
+                        right: '1.25rem',
+                        padding: '0.65rem 1.25rem',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '10px',
+                        fontSize: '0.85rem',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                        e.currentTarget.style.boxShadow = '0 6px 18px rgba(102, 126, 234, 0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                    }}
+                >
+                    View Details
+                    <ArrowRight size={16} />
+                </button>
+            </div>
+        );
+    };
 
     const DetailModal = ({ volunteer, onClose }) => {
         if (!volunteer) return null;
 
-        const isPrescreening = volunteer.current_status === 'submitted';
+        const isScreening = volunteer.current_status === 'screening';
+        const isPrescreening = volunteer.current_status === 'prescreening';
         const [showStudySelection, setShowStudySelection] = useState(false);
         const [studies, setStudies] = useState([]);
         const [loadingStudies, setLoadingStudies] = useState(false);
@@ -251,10 +286,10 @@ const RecentEnrollment = () => {
                             borderRadius: '8px',
                             fontSize: '0.8rem',
                             fontWeight: '600',
-                            background: isPrescreening ? 'rgba(255, 171, 0, 0.2)' : 'rgba(34, 197, 94, 0.2)',
-                            color: isPrescreening ? 'var(--accent)' : 'var(--success)'
+                            background: isScreening ? 'rgba(99, 102, 241, 0.2)' : isPrescreening ? 'rgba(255, 171, 0, 0.2)' : 'rgba(34, 197, 94, 0.2)',
+                            color: isScreening ? 'var(--primary)' : isPrescreening ? 'var(--accent)' : 'var(--success)'
                         }}>
-                            {isPrescreening ? 'Pre-screening' : 'Approved'}
+                            {isScreening ? 'Screening' : isPrescreening ? 'Pre-screening' : 'Approved'}
                         </div>
                     </div>
 
@@ -411,7 +446,7 @@ const RecentEnrollment = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    {isPrescreening ? (
+                    {isScreening ? (
                         <button
                             onClick={() => navigate(`/registration/${volunteer.volunteer_id}`)}
                             style={{
@@ -434,6 +469,38 @@ const RecentEnrollment = () => {
                         >
                             Proceed to Registration
                             <ArrowRight size={20} />
+                        </button>
+                    ) : isPrescreening ? (
+                        <button
+                            onClick={async () => {
+                                try {
+                                    await api.post(`/enrollment/approve/${volunteer.volunteer_id}`);
+                                    onClose();
+                                    window.location.reload(); // Refresh to show updated status
+                                } catch (err) {
+                                    alert(err.response?.data?.detail || 'Failed to approve volunteer');
+                                }
+                            }}
+                            style={{
+                                width: '100%',
+                                padding: '1rem',
+                                background: 'linear-gradient(90deg, #10b981, #059669)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '12px',
+                                fontSize: '1rem',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem',
+                                boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            Approve Volunteer
+                            <UserCheck size={20} />
                         </button>
                     ) : (
                         <>
@@ -620,6 +687,130 @@ const RecentEnrollment = () => {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 500px), 1fr))', gap: '2rem' }}>
+                    {/* Screening Card */}
+                    <div>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.8rem',
+                            marginBottom: '1.5rem',
+                            padding: '1.25rem',
+                            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%)',
+                            borderRadius: '16px',
+                            border: '2px solid rgba(99, 102, 241, 0.2)',
+                            boxShadow: '0 4px 15px rgba(99, 102, 241, 0.1)'
+                        }}>
+                            <div style={{
+                                padding: '0.75rem',
+                                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                borderRadius: '12px',
+                                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
+                            }}>
+                                <FileText color="white" size={28} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <h2 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '0.3rem', color: '#1e293b', letterSpacing: '-0.5px' }}>
+                                    Screening
+                                </h2>
+                                <p style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '600' }}>
+                                    {data.screening.filter(v =>
+                                        !screeningSearch ||
+                                        v.basic_info?.name?.toLowerCase().includes(screeningSearch.toLowerCase()) ||
+                                        v.volunteer_id?.toLowerCase().includes(screeningSearch.toLowerCase()) ||
+                                        v.contact?.includes(screeningSearch)
+                                    ).length} initial enrollments
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Search Bar for Screening */}
+                        <div style={{
+                            position: 'relative',
+                            marginBottom: '1.5rem',
+                            animation: 'fadeIn 0.3s ease-in'
+                        }}>
+                            <Search
+                                size={18}
+                                style={{
+                                    position: 'absolute',
+                                    left: '1rem',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    color: '#94a3b8',
+                                    zIndex: 1
+                                }}
+                            />
+                            <input
+                                type="text"
+                                placeholder="Search by name, ID, or contact..."
+                                value={screeningSearch}
+                                onChange={(e) => setScreeningSearch(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.85rem 1rem 0.85rem 3rem',
+                                    border: '2px solid #e2e8f0',
+                                    borderRadius: '12px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '500',
+                                    background: 'white',
+                                    transition: 'all 0.2s',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                                }}
+                                onFocus={(e) => {
+                                    e.target.style.borderColor = '#6366f1';
+                                    e.target.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.15)';
+                                }}
+                                onBlur={(e) => {
+                                    e.target.style.borderColor = '#e2e8f0';
+                                    e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
+                                }}
+                            />
+                        </div>
+
+                        {data.screening.filter(v =>
+                            !screeningSearch ||
+                            v.basic_info?.name?.toLowerCase().includes(screeningSearch.toLowerCase()) ||
+                            v.volunteer_id?.toLowerCase().includes(screeningSearch.toLowerCase()) ||
+                            v.contact?.includes(screeningSearch)
+                        ).length === 0 ? (
+                            <div className="glass-card" style={{ padding: '3rem 2rem', textAlign: 'center', background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)' }}>
+                                <Users size={56} color="#cbd5e1" style={{ marginBottom: '1rem' }} />
+                                <p style={{ color: '#64748b', fontSize: '1rem', fontWeight: '600' }}>
+                                    {screeningSearch ? 'No matching volunteers found' : 'No screening volunteers'}
+                                </p>
+                                {screeningSearch && (
+                                    <button
+                                        onClick={() => setScreeningSearch('')}
+                                        style={{
+                                            marginTop: '1rem',
+                                            padding: '0.5rem 1rem',
+                                            background: 'transparent',
+                                            border: '2px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            color: '#64748b',
+                                            cursor: 'pointer',
+                                            fontWeight: '600',
+                                            fontSize: '0.85rem'
+                                        }}
+                                    >
+                                        Clear Search
+                                    </button>
+                                )}
+                            </div>
+                        ) : (
+                            <div style={{ maxHeight: '600px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                                {data.screening.filter(v =>
+                                    !screeningSearch ||
+                                    v.basic_info?.name?.toLowerCase().includes(screeningSearch.toLowerCase()) ||
+                                    v.volunteer_id?.toLowerCase().includes(screeningSearch.toLowerCase()) ||
+                                    v.contact?.includes(screeningSearch)
+                                ).map((volunteer) => (
+                                    <VolunteerCard key={volunteer.volunteer_id} volunteer={volunteer} status="screening" />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     {/* Pre-screening Card */}
                     <div>
                         <div style={{

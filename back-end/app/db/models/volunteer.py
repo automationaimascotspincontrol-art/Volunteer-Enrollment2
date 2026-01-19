@@ -51,7 +51,7 @@ class VolunteerDocument(BaseModel):
     legacy_id: Optional[str] = None
     subject_code: Optional[str] = None  # Unique Subject Code (e.g. SANKA, SANK1)
     stage: Literal["pre_screening", "registered"] = "pre_screening"
-    status: Literal["submitted", "approved", "rejected"] = "submitted"
+    status: Literal["screening", "prescreening", "approved", "rejected"] = "screening"
     
     pre_screening: PreScreeningCreate
     registration: Optional[RegistrationUpdate] = None
