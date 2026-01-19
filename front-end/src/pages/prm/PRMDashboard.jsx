@@ -195,6 +195,52 @@ const SBoard = () => {
         }
     };
 
+    const downloadWashoutVolunteers = async () => {
+        try {
+            const response = await axios.get('http://localhost:8000/api/v1/prm/assignments/volunteers/in-washout', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (!response.data.volunteers || response.data.volunteers.length === 0) {
+                alert('No volunteers currently in washout period');
+                return;
+            }
+
+            // Create Excel file
+            const XLSX = await import('xlsx');
+            const ws_data = [
+                ['Subject Code', 'Legacy ID', 'Volunteer ID', 'Name', 'Contact', 'Age', 'Gender',
+                    'Completed Study', 'Study Code', 'Study End Date', 'Washout Days', 'Available From', 'Days Remaining']
+            ];
+
+            response.data.volunteers.forEach(v => {
+                ws_data.push([
+                    v.subject_code || '-',
+                    v.legacy_id || '-',
+                    v.volunteer_id,
+                    v.volunteer_name,
+                    v.contact || '-',
+                    v.age || '-',
+                    v.gender || '-',
+                    v.completed_study_name,
+                    v.completed_study_code,
+                    v.study_end_date ? new Date(v.study_end_date).toLocaleDateString() : '-',
+                    v.washout_days,
+                    v.washout_complete_date ? new Date(v.washout_complete_date).toLocaleDateString() : '-',
+                    v.days_remaining
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Washout Volunteers');
+            XLSX.writeFile(wb, `Washout_Volunteers_${new Date().toISOString().split('T')[0]}.xlsx`);
+        } catch (err) {
+            console.error(err);
+            alert('Failed to download washout volunteers report.');
+        }
+    };
+
     const handleSearch = async (e) => {
         e.preventDefault();
         if (!searchQuery.trim()) return;
@@ -658,6 +704,35 @@ const SBoard = () => {
                     >
                         <Calendar size={18} />
                         Calendar
+                    </button>
+                    <button
+                        onClick={downloadWashoutVolunteers}
+                        style={{
+                            padding: '0.9rem 1.5rem',
+                            background: 'linear-gradient(to right, #f59e0b, #d97706)',
+                            border: 'none',
+                            borderRadius: '12px',
+                            color: 'white',
+                            fontSize: '0.95rem',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            boxShadow: '0 4px 15px rgba(245, 158, 11, 0.3)',
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 6px 20px rgba(245, 158, 11, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(245, 158, 11, 0.3)';
+                        }}
+                    >
+                        <FileDown size={18} />
+                        Washout Volunteers
                     </button>
                     <div style={{ padding: '0.8rem 1.2rem', borderRadius: '14px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', fontSize: '0.85rem' }}>
                         <span style={{ color: 'var(--text-muted)' }}>Last updated: </span>

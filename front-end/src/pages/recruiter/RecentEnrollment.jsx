@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api/api';
 import { Users, CheckCircle, Clock, Calendar, X, ArrowRight, Phone, MapPin, User, Cake, Briefcase, AlertCircle, Search, FileText, UserCheck } from 'lucide-react';
+import WashoutWarningModal from '../../components/WashoutWarningModal';
 
 const RecentEnrollment = () => {
     const [data, setData] = useState({ screening: [], prescreening: [], approved: [] });
@@ -199,6 +200,9 @@ const RecentEnrollment = () => {
         const [selectedStudy, setSelectedStudy] = useState(null);
         const [assigning, setAssigning] = useState(false);
         const [errorMessage, setErrorMessage] = useState('');
+        const [showWashoutWarning, setShowWashoutWarning] = useState(false);
+        const [activeStudies, setActiveStudies] = useState([]);
+        const [checkingWashout, setCheckingWashout] = useState(false);
 
         const fetchOngoingStudies = async () => {
             setLoadingStudies(true);
@@ -212,11 +216,42 @@ const RecentEnrollment = () => {
             }
         };
 
+        const checkActiveStudies = async () => {
+            setCheckingWashout(true);
+            try {
+                const response = await api.get(`/prm/assignments/volunteers/${volunteer.volunteer_id}/active-studies`);
+                if (response.data.active_studies && response.data.active_studies.length > 0) {
+                    setActiveStudies(response.data.active_studies);
+                    setShowWashoutWarning(true);
+                    return true; // Has active studies
+                }
+                return false; // No active studies
+            } catch (err) {
+                console.error('Failed to check active studies:', err);
+                return false; // Proceed anyway if check fails
+            } finally {
+                setCheckingWashout(false);
+            }
+        };
+
         const handleAssignToStudy = async () => {
             if (!selectedStudy) return;
 
+            // First check if volunteer has active studies
+            const hasActiveStudies = await checkActiveStudies();
+
+            // If has active studies, warning modal will show - wait for user decision
+            if (hasActiveStudies) {
+                return; // Modal is now showing, user will click proceed or cancel
+            }
+
+            // No active studies, proceed directly
+            await proceedWithAssignment();
+        };
+
+        const proceedWithAssignment = async () => {
             setAssigning(true);
-            setErrorMessage(''); // Clear previous errors
+            setErrorMessage('');
             try {
                 await api.post('/clinical/assign-to-study', {
                     volunteer_id: volunteer.volunteer_id,
@@ -226,6 +261,7 @@ const RecentEnrollment = () => {
 
                 // Dismiss modal and navigate immediately
                 setShowStudySelection(false);
+                setShowWashoutWarning(false);
                 onClose();
                 navigate('/prm/assigned-studies');
             } catch (err) {

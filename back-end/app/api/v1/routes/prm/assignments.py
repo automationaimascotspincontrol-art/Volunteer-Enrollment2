@@ -600,3 +600,90 @@ async def get_volunteer_active_studies(
     except Exception as e:
         logger.error(f"Error fetching active studies for {volunteer_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch active studies: {str(e)}")
+
+
+@router.get("/volunteers/in-washout")
+async def get_volunteers_in_washout(
+    user: UserBase = Depends(get_current_user)
+):
+    """
+    Get all volunteers currently in washout period.
+    Returns volunteers whose most recent study ended and washout is not yet complete.
+    """
+    try:
+        from app.utils.washout_calculations import calculate_washout_date
+        from datetime import datetime, timezone
+        
+        # Find all completed or ended study assignments
+        completed_assignments = await AssignedStudy.find({
+            "status": {"$in": ["completed", "ended"]}
+        }).to_list()
+        
+        washout_volunteers = []
+        volunteer_ids_seen = set()
+        
+        for assignment in completed_assignments:
+            # Skip if we already processed this volunteer
+            if assignment.volunteer_id in volunteer_ids_seen:
+                continue
+            
+            # Get study instance details
+            study_instance = await db.study_instances.find_one({
+                "$or": [
+                    {"enteredStudyCode": assignment.study_code},
+                    {"studyInstanceCode": assignment.study_code}
+                ]
+            })
+            
+            if not study_instance:
+                continue
+            
+            # Get washout information
+            end_date = study_instance.get("endDate") or study_instance.get("drtWashoutDate")
+            washout_days = study_instance.get("washoutPeriod", 0)
+            
+            if isinstance(washout_days, str):
+                try:
+                    washout_days = int(washout_days)
+                except ValueError:
+                    washout_days = 0
+            
+            # Calculate washout complete date
+            washout_complete = calculate_washout_date(end_date, washout_days)
+            
+            if washout_complete:
+                now = datetime.now(timezone.utc)
+                
+                # Check if currently in washout (study ended but washout not complete)
+                if end_date and now >= end_date and now < washout_complete:
+                    volunteer_ids_seen.add(assignment.volunteer_id)
+                    
+                    # Get volunteer details
+                    volunteer = await db.volunteers_master.find_one({"volunteer_id": assignment.volunteer_id})
+                    basic_info = volunteer.get("basic_info", {}) if volunteer else {}
+                    
+                    washout_volunteers.append({
+                        "volunteer_id": assignment.volunteer_id,
+                        "volunteer_name": assignment.volunteer_name or basic_info.get("name", "Unknown"),
+                        "subject_code": volunteer.get("subject_code") if volunteer else None,
+                        "legacy_id": volunteer.get("legacy_id") if volunteer else None,
+                        "contact": assignment.volunteer_contact or basic_info.get("contact"),
+                        "age": assignment.volunteer_age or basic_info.get("age"),
+                        "gender": assignment.volunteer_gender or basic_info.get("gender"),
+                        "completed_study_code": assignment.study_code,
+                        "completed_study_name": assignment.study_name,
+                        "study_end_date": end_date.isoformat() if end_date else None,
+                        "washout_days": washout_days,
+                        "washout_complete_date": washout_complete.isoformat(),
+                        "days_remaining": (washout_complete - now).days
+                    })
+        
+        return {
+            "success": True,
+            "count": len(washout_volunteers),
+            "volunteers": washout_volunteers
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching washout volunteers: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch washout volunteers: {str(e)}")
