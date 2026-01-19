@@ -29,6 +29,7 @@ async def get_assigned_studies(
 ):
     """
     Get paginated list of assigned studies from dedicated collection.
+    Only returns studies that were created via PRM calendar login.
     """
     skip = (page - 1) * limit
     
@@ -50,37 +51,44 @@ async def get_assigned_studies(
     # Fetch
     assignments = await AssignedStudy.find(query).sort("-created_at").skip(skip).limit(limit).to_list()
     
-    # ------------------------------------------------------------------
-    # Fetch PRM Stude Codes (enteredStudyCode) from Calendar
-    # ------------------------------------------------------------------
-    # distinct study_ids from the current page of assignments
+    # Filter to only PRM calendar studies
+    # Get unique study_ids from assignments
     unique_study_ids = list(set([a.study_id for a in assignments if a.study_id]))
     
-    study_code_map = {}
+    # Check which studies exist in study_instances (PRM calendar)
+    prm_study_ids = set()
     if unique_study_ids:
-        # Convert string IDs to ObjectIds if possible, though study_id here might be string or ObjectId depending on how it was saved.
-        # study_instances._id is ObjectId.
-        
-        # safely convert to ObjectId for query
         obj_ids = []
         for sid in unique_study_ids:
-             try:
-                 obj_ids.append(PydanticObjectId(sid))
-             except:
-                 pass
+            try:
+                obj_ids.append(PydanticObjectId(sid))
+            except:
+                pass
         
         if obj_ids:
             calendar_studies = await db.study_instances.find({"_id": {"$in": obj_ids}}).to_list(None)
-            for cs in calendar_studies:
-                # enteredStudyCode is the "PRM Login Code" (e.g. XXX-7I02...)
-                # fallback to studyInstanceCode if entered missing
-                code = cs.get("enteredStudyCode") or cs.get("studyInstanceCode")
-                if code:
-                    study_code_map[str(cs["_id"])] = code
+            prm_study_ids = {str(cs["_id"]) for cs in calendar_studies}
+    
+    # Filter assignments to only those from PRM calendar
+    filtered_assignments = [a for a in assignments if a.study_id in prm_study_ids]
+    
+    # ------------------------------------------------------------------
+    # Fetch PRM Study Codes (enteredStudyCode) from Calendar
+    # ------------------------------------------------------------------
+    study_code_map = {}
+    if prm_study_ids:
+        obj_ids = [PydanticObjectId(sid) for sid in prm_study_ids]
+        calendar_studies = await db.study_instances.find({"_id": {"$in": obj_ids}}).to_list(None)
+        for cs in calendar_studies:
+            # enteredStudyCode is the "PRM Login Code" (e.g. XXX-7I02...)
+            # fallback to studyInstanceCode if entered missing
+            code = cs.get("enteredStudyCode") or cs.get("studyInstanceCode")
+            if code:
+                study_code_map[str(cs["_id"])] = code
 
     # Map to frontend format
     data = []
-    for a in assignments:
+    for a in filtered_assignments:
         # Sanitize volunteer name - remove duplicate prefix if exists (e.g., "SSahil" -> "Sahil", "ffieldtest" -> "fieldtest")
         volunteer_name = a.volunteer_name or ""
         # Check if first two characters are identical (regardless of case)
@@ -108,9 +116,9 @@ async def get_assigned_studies(
     return {
         "success": True,
         "data": data,
-        "total": total,
+        "total": len(data),  # Update total to reflect filtered count
         "page": page,
-        "pages": (total + limit - 1) // limit
+        "pages": (len(data) + limit - 1) // limit
     }
 
 @router.get("/assigned-studies/export")

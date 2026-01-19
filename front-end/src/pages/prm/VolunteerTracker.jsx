@@ -134,11 +134,16 @@ const VolunteerTracker = () => {
         }
     };
 
-    const toggleAttendance = async (volunteerId, currentStatus) => {
+    const toggleAttendance = async (volunteerId, currentStatus, studyCode = null) => {
         try {
             const action = currentStatus === 'IN' ? 'OUT' : 'IN';
+            const payload = { volunteer_id: volunteerId, action };
+            if (studyCode) {
+                payload.study_code = studyCode;
+            }
+
             await axios.post('http://localhost:8000/api/v1/volunteers/attendance/toggle',
-                { volunteer_id: volunteerId, action },
+                payload,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             // Refresh both approved volunteers and study attendance
@@ -561,20 +566,20 @@ const VolunteerTracker = () => {
                                         </td>
                                         <td style={{ textAlign: 'right' }}>
                                             <button
-                                                onClick={() => toggleAttendance(vol.volunteer_id, vol.attendance_status)}
+                                                onClick={() => toggleAttendance(vol.volunteer_id, vol.attendance_status === 'IN' ? 'OUT' : 'IN')}
                                                 style={{
                                                     padding: '0.4rem 0.8rem',
                                                     borderRadius: '8px',
-                                                    border: '1px solid var(--border-color)',
+                                                    border: 'none',
+                                                    background: vol.attendance_status === 'IN' ? '#fef2f2' : '#ecfdf5',
+                                                    color: vol.attendance_status === 'IN' ? '#dc2626' : '#059669',
+                                                    fontSize: '0.75rem',
                                                     fontWeight: '600',
-                                                    fontSize: '0.8rem',
                                                     cursor: 'pointer',
-                                                    background: 'white',
-                                                    color: vol.attendance_status === 'IN' ? '#ef4444' : '#10b981',
-                                                    borderColor: vol.attendance_status === 'IN' ? '#ef4444' : '#10b981'
+                                                    transition: 'all 0.2s'
                                                 }}
                                             >
-                                                {vol.attendance_status === 'IN' ? 'Check Out' : 'Check In'}
+                                                {vol.attendance_status === 'IN' ? 'Mark Out' : 'Mark In'}
                                             </button>
                                         </td>
                                     </tr>
@@ -714,7 +719,7 @@ const VolunteerTracker = () => {
                                                                 </span>
                                                             )}
                                                             <button
-                                                                onClick={() => toggleAttendance(vol.volunteer_id, vol.attendance_status === 'present' ? 'IN' : 'OUT')}
+                                                                onClick={() => toggleAttendance(vol.volunteer_id, vol.attendance_status === 'present' ? 'IN' : 'OUT', study.study_code)}
                                                                 style={{
                                                                     padding: '0.3rem 0.6rem',
                                                                     borderRadius: '6px',

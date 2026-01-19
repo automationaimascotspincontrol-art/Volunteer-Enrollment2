@@ -15,6 +15,7 @@ router = APIRouter(prefix="/volunteers", tags=["volunteers"])
 class AttendanceToggleRequest(BaseModel):
     volunteer_id: str
     action: str  # "IN" or "OUT"
+    study_code: Optional[str] = None  # Optional study code for study-specific attendance
 
 class BulkAttendanceRequest(BaseModel):
     volunteer_ids: List[str]
@@ -298,17 +299,22 @@ async def toggle_attendance(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Toggle volunteer attendance IN/OUT.
+    Toggle volunteer attendance IN/OUT for a specific study.
     """
     try:
         volunteer_id = request.volunteer_id
         action = request.action.upper()
+        study_code = request.study_code  # Now directly available in model
         
         if action not in ["IN", "OUT"]:
             raise HTTPException(status_code=400, detail="Action must be 'IN' or 'OUT'")
         
-        # Find or create attendance record
-        attendance = await VolunteerAttendance.find_one({"volunteer_id": volunteer_id})
+        # Find or create study-specific attendance record
+        query = {"volunteer_id": volunteer_id}
+        if study_code:
+            query["study_code"] = study_code
+        
+        attendance = await VolunteerAttendance.find_one(query)
         
         if not attendance:
             # Create new attendance record
@@ -321,7 +327,7 @@ async def toggle_attendance(
                 volunteer_id=volunteer_id,
                 volunteer_name=basic_info.get("name", "Unknown"),
                 assigned_study_id="",
-                study_code="",
+                study_code=study_code or "",
                 study_name=""
             )
         
@@ -335,6 +341,7 @@ async def toggle_attendance(
         return {
             "success": True,
             "volunteer_id": volunteer_id,
+            "study_code": study_code,
             "status": "IN" if attendance.is_active else "OUT",
             "check_in_time": attendance.check_in_time,
             "check_out_time": attendance.check_out_time
@@ -486,10 +493,18 @@ async def update_approval_status(
 @router.get("/study-attendance")
 async def get_study_attendance(current_user: dict = Depends(get_current_user)):
     """
-    Get ongoing studies with assigned volunteers for attendance tracking.
+    Get ONGOING PRM calendar studies with assigned volunteers for attendance tracking.
     Shows volunteers assigned to active studies with their information.
+    Attendance is tracked per volunteer per study.
+    Only returns studies that are:
+    1. Created via PRM calendar (exist in study_instances collection)
+    2. Currently ongoing or have follow-ups on current date
     """
     try:
+        from datetime import datetime
+        from bson import ObjectId
+        now = datetime.now()
+        
         # Find ongoing studies from assigned_studies collection
         # Group by study_code to get unique studies
         pipeline = [
@@ -498,20 +513,56 @@ async def get_study_attendance(current_user: dict = Depends(get_current_user)):
                 "_id": "$study_code",
                 "study_id": {"$first": "$study_id"},
                 "study_name": {"$first": "$study_name"},
+                "start_date": {"$first": "$start_date"},
+                "end_date": {"$first": "$end_date"},
                 "volunteers": {"$push": "$volunteer_id"}
             }},
-            {"$limit": 20}
+            {"$sort": {"_id": 1}},  # Sort by study_code for consistent ordering
+            {"$limit": 50}
         ]
         
         studies_cursor = db.assigned_studies.aggregate(pipeline)
-        studies_grouped = await studies_cursor.to_list(length=20)
+        studies_grouped = await studies_cursor.to_list(length=50)
         
         result = []
         
         for study_group in studies_grouped:
             study_code = study_group.get("_id", "Unknown")
             study_name = study_group.get("study_name", "Unknown Study")
+            study_id_str = study_group.get("study_id")
+            start_date = study_group.get("start_date")
+            end_date = study_group.get("end_date")
             volunteer_ids = study_group.get("volunteers", [])
+            
+            # Filter 1: Only show PRM calendar studies
+            # Check if study exists in study_instances collection
+            try:
+                if study_id_str:
+                    study_obj_id = ObjectId(study_id_str) if isinstance(study_id_str, str) else study_id_str
+                    prm_study = await db.study_instances.find_one({"_id": study_obj_id})
+                    if not prm_study:
+                        # Not a PRM calendar study, skip it
+                        continue
+                else:
+                    # No study_id means not from calendar
+                    continue
+            except Exception as e:
+                print(f"Error checking study_instances for {study_code}: {e}")
+                continue
+            
+            # Filter 2: Only show ONGOING studies or follow-up studies active today
+            if start_date and end_date:
+                try:
+                    if isinstance(start_date, str):
+                        start_date = datetime.fromisoformat(start_date.replace('Z', ''))
+                    if isinstance(end_date, str):
+                        end_date = datetime.fromisoformat(end_date.replace('Z', ''))
+                    
+                    # Skip if study hasn't started yet or has already ended
+                    if now < start_date or now > end_date:
+                        continue
+                except Exception as e:
+                    print(f"Error parsing dates for study {study_code}: {e}")
             
             volunteers_data = []
             
@@ -526,9 +577,10 @@ async def get_study_attendance(current_user: dict = Depends(get_current_user)):
                 
                 basic_info = volunteer.get("basic_info", {})
                 
-                # Get attendance status
+                # Get study-specific attendance status
                 attendance = await db.volunteer_attendance.find_one({
                     "volunteer_id": volunteer_id,
+                    "study_code": study_code,  # Study-specific attendance
                     "is_active": True
                 })
                 
@@ -544,7 +596,7 @@ async def get_study_attendance(current_user: dict = Depends(get_current_user)):
                 result.append({
                     "study_code": study_code,
                     "study_name": study_name,
-                    "study_type": "Clinical",  # Default type
+                    "study_type": "PRM Calendar",  # Mark as PRM calendar study
                     "volunteers": volunteers_data
                 })
         
