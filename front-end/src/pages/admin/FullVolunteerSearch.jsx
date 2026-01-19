@@ -256,11 +256,23 @@ const FullVolunteerSearch = () => {
                             <React.Fragment key={vol.volunteer_id}>
                                 <tr className="hover-row" style={{ borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.2s' }}>
                                     <td style={{ padding: '1.2rem 1.5rem' }}>
-                                        <div style={{ fontWeight: '700', color: '#111827', fontSize: '1rem', marginBottom: '0.2rem' }}>
+                                        <div style={{ fontWeight: '700', color: '#111827', fontSize: '1rem', marginBottom: '0.3rem' }}>
                                             {renderCell(vol, 'name')}
                                         </div>
-                                        <div style={{ fontSize: '0.75rem', color: '#6366f1', background: 'rgba(99, 102, 241, 0.1)', padding: '0.2rem 0.5rem', borderRadius: '6px', width: 'fit-content', fontFamily: 'monospace', fontWeight: '600' }}>
-                                            {vol.volunteer_id}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                            {vol.subject_code && (
+                                                <div style={{ fontSize: '0.8rem', color: '#059669', background: 'rgba(5, 150, 105, 0.1)', padding: '0.2rem 0.5rem', borderRadius: '6px', width: 'fit-content', fontFamily: 'monospace', fontWeight: '700' }}>
+                                                    📋 {vol.subject_code}
+                                                </div>
+                                            )}
+                                            {vol.legacy_id && (
+                                                <div style={{ fontSize: '0.75rem', color: '#d97706', background: 'rgba(217, 119, 6, 0.1)', padding: '0.2rem 0.5rem', borderRadius: '6px', width: 'fit-content', fontFamily: 'monospace', fontWeight: '600' }}>
+                                                    🏷️ Legacy: {vol.legacy_id}
+                                                </div>
+                                            )}
+                                            <div style={{ fontSize: '0.7rem', color: '#6366f1', background: 'rgba(99, 102, 241, 0.1)', padding: '0.2rem 0.5rem', borderRadius: '6px', width: 'fit-content', fontFamily: 'monospace', fontWeight: '600' }}>
+                                                🆔 {vol.volunteer_id}
+                                            </div>
                                         </div>
                                     </td>
                                     <td style={{ padding: '1.2rem 1.5rem' }}>

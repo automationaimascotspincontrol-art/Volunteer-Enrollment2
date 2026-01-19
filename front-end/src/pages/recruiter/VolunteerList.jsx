@@ -536,10 +536,14 @@ const VolunteerList = () => {
                         <table className="custom-table">
                             <thead>
                                 <tr>
-                                    <th>Subject Code / ID</th>
+                                    <th>Subject Code</th>
+                                    <th>Legacy ID</th>
                                     <th>Name</th>
                                     <th>Contact</th>
+                                    <th>Age</th>
                                     <th>Gender</th>
+                                    <th>Location</th>
+                                    <th>Address</th>
                                     <th>Stage</th>
                                     <th>Status</th>
                                     <th>Date</th>
@@ -555,16 +559,29 @@ const VolunteerList = () => {
                                         }}>
                                             <td>
                                                 <div style={{ fontFamily: 'monospace', fontSize: '0.95rem', fontWeight: '700', color: 'var(--primary)' }}>{vol.subject_code || '-'}</div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{vol.volunteer_id}</div>
-                                                {vol.legacy_id && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Legacy: {vol.legacy_id}</div>}
+                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{vol.volunteer_id}</div>
+                                            </td>
+                                            <td>
+                                                <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', color: vol.legacy_id ? '#059669' : '#9ca3af' }}>
+                                                    {vol.legacy_id || 'N/A'}
+                                                </div>
                                             </td>
                                             <td style={{ fontWeight: '600', color: '#1e293b' }}>{vol.basic_info?.name || vol.pre_screening?.name || vol.name || 'N/A'}</td>
                                             <td style={{ color: 'var(--text-muted)' }}>{vol.basic_info?.contact || vol.pre_screening?.contact || vol.phone || vol.mobile || 'N/A'}</td>
+                                            <td style={{ textAlign: 'center' }}>
+                                                {vol.basic_info?.age || vol.pre_screening?.age || vol.age || '-'}
+                                            </td>
                                             <td style={{ textTransform: 'capitalize' }}>
                                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
                                                     {(vol.basic_info?.gender || vol.pre_screening?.gender || vol.gender) === 'male' ? '👨' : (vol.basic_info?.gender || vol.pre_screening?.gender || vol.gender) === 'female' ? '👩' : '👤'}
                                                     {vol.basic_info?.gender || vol.pre_screening?.gender || vol.gender || 'N/A'}
                                                 </span>
+                                            </td>
+                                            <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                                {vol.basic_info?.location || vol.pre_screening?.location || vol.city || '-'}
+                                            </td>
+                                            <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {vol.basic_info?.address || vol.pre_screening?.address || vol.address || '-'}
                                             </td>
                                             <td>
                                                 <span className={`badge ${vol.stage === 'registered' ? 'badge-success' : 'badge-primary'}`}>
