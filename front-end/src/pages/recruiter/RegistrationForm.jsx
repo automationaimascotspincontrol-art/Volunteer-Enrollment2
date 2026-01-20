@@ -93,7 +93,13 @@ const RegistrationForm = () => {
         setError('');
         try {
             await api.patch(`/registration/${id}`, formData);
-            navigate('/registration-success', { state: { volunteerId: id, status: formData.fit_status } });
+            navigate('/registration-success', {
+                state: {
+                    volunteerId: id,
+                    subjectCode: response.data.subject_code,
+                    status: formData.fit_status
+                }
+            });
         } catch (err) {
             setError(err.response?.data?.detail || 'Failed to update registration');
         } finally {
