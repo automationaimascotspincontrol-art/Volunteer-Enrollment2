@@ -90,24 +90,46 @@ async def get_pre_registration_volunteers(current_user: dict = Depends(get_curre
     """
     try:
         volunteers = await db.volunteers_master.find({
-            "current_stage": {"$in": ["pre_screening", "pending"]}
+            "current_status": {"$in": ["prescreening", "screening"]}
         }).to_list(100)
         
+        # Get list of volunteer IDs to check attendance
+        vol_ids = [str(v["_id"]) for v in volunteers]
+        vol_id_map = {str(v["_id"]): v.get("volunteer_id") for v in volunteers}
+        
+        # Fetch active attendance records for these volunteers
+        active_attendance = await db.volunteer_attendance.find({
+            "volunteer_id": {"$in": list(vol_id_map.values())},
+            "is_active": True
+        }).to_list(None)
+        
+        # Create a map of active attendance
+        attendance_map = {a["volunteer_id"]: a for a in active_attendance}
+
         result = []
         for vol in volunteers:
             # Fetch details from prescreening if basic_info is incomplete
             basic_info = vol.get("basic_info", {})
+            v_id = vol.get("volunteer_id")
+            
+            # Determine attendance status
+            attendance_record = attendance_map.get(v_id)
+            attendance_status = "IN" if attendance_record else "OUT"
+            check_in_time = attendance_record.get("check_in_time") if attendance_record else None
             
             result.append({
                 "id": str(vol.get("_id")),
-                "volunteer_id": vol.get("volunteer_id"),
+                "volunteer_id": v_id,
                 "name": basic_info.get("name", "Unknown"),
                 "contact": vol.get("contact", basic_info.get("contact", "N/A")),
                 "age": basic_info.get("age"),
                 "gender": basic_info.get("gender", basic_info.get("sex", "N/A")),
                 "medical_status": vol.get("medical_status", "pending"),
                 "registration_date": vol.get("created_at"),
-                "stage": vol.get("current_stage", "pending")
+                "stage": vol.get("current_stage", "pending"),
+                "current_status": vol.get("current_status", "prescreening"),
+                "attendance_status": attendance_status,
+                "check_in_time": check_in_time
             })
         
         return result
