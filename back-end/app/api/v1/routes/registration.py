@@ -22,9 +22,9 @@ async def update_registration(
         )
     
     now = datetime.utcnow()
-    # Three-stage workflow: screening -> prescreening (on fit) -> approved (manual)
-    # If fit: move to prescreening, if unfit: reject
-    status_val = "prescreening" if data.fit_status == "yes" else "rejected"
+    # Correct three-stage workflow: prescreening → screening (on fit) → approved (manual)
+    # If fit: move to screening, if unfit: reject
+    status_val = "screening" if data.fit_status == "yes" else "rejected"
     
     # 2. Update Master Record
     master_update = {
@@ -183,7 +183,7 @@ async def update_registration(
                        visit_id=f"REG-{volunteer_id}-{study_code}", # Simple unique ID
                        assigned_by=current_recruiter["name"],
                        assignment_date=datetime.now(), # Use current time
-                       status="assigned" if status_val == "prescreening" else "rejected", # Map status
+                       status="assigned" if status_val == "screening" else "rejected", # Map status
                        
                        study_id=str(study_info.get("_id") if study_info else "manual"),
                        study_code=study_code,
@@ -203,7 +203,7 @@ async def update_registration(
                 else:
                     # Update status if needed
                     existing_assignment.fitness_status = "fit" if data.fit_status == "yes" else "unfit"
-                    existing_assignment.status = "assigned" if status_val == "prescreening" else "rejected"
+                    existing_assignment.status = "assigned" if status_val == "screening" else "rejected"
                     existing_assignment.remarks = data.remarks or ""
                     # Update any potentially improved contact info
                     if v_contact and v_contact != "N/A":

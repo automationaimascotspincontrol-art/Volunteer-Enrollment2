@@ -64,7 +64,7 @@ async def create_prescreening(
         "subject_code": subject_code,  # Add subject code
         "legacy_id": None,
         "current_stage": "pre_screening",
-        "current_status": "submitted",
+        "current_status": "prescreening",
         "basic_info": {
             "first_name": data.first_name,
             "middle_name": data.middle_name,
