@@ -208,6 +208,87 @@ async def get_analytics(user: UserBase = Depends(get_current_user)):
         }
     }
 
+@router.get("/prm-dashboard/studies-by-status")
+async def get_studies_by_status(
+    status: str = Query(..., regex="^(ONGOING|UPCOMING|COMPLETED|ongoing|upcoming|completed)$"),
+    user: UserBase = Depends(get_current_user)
+):
+    """Get studies filtered by status for SBoard sections"""
+    try:
+        # Normalize status to uppercase
+        status_upper = status.upper()
+        
+        # Build query based on status with date logic
+        today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        
+        if status_upper == "ONGOING":
+            # Ongoing: Status is not COMPLETED and start date is today or before
+            query = {
+                "$and": [
+                    {"status": {"$nin": ["COMPLETED", "completed"]}},
+                    {"startDate": {"$lte": today_str}}
+                ]
+            }
+        elif status_upper == "UPCOMING":
+            # Upcoming: Status is not COMPLETED and start date is in the future
+            query = {
+                "$and": [
+                    {"status": {"$nin": ["COMPLETED", "completed"]}},
+                    {"startDate": {"$gt": today_str}}
+                ]
+            }
+        else:  # COMPLETED
+            # Completed: Status is explicitly COMPLETED
+            query = {"status": {"$in": ["COMPLETED", "completed"]}}
+        
+        # Fetch studies matching the status
+        studies = await db.study_instances.find(query).sort("startDate", -1).to_list(1000)
+        
+        results = []
+        for study in studies:
+            study_id = str(study["_id"])
+            study_code = study.get("enteredStudyCode") or study.get("studyInstanceCode")
+            
+            # Count assigned volunteers for this study
+            assignment_count = 0
+            if study_code:
+                assignment_count = await db.assigned_studies.count_documents({"study_code": study_code})
+            
+            # Count visits for this study
+            visit_count = await db.study_visits.count_documents({"studyInstanceId": study_id})
+            
+            results.append({
+                "_id": study_id,
+                "studyCode": study_code,
+                "studyName": study.get("studyName", "Unnamed Study"),
+                "startDate": study.get("startDate"),
+                "endDate": study.get("drtWashoutDate"),  # DRT washout date or end date
+                "status": study.get("status", status_upper),
+                "volunteersPlanned": study.get("volunteersPlanned", 0),
+                "volunteersAssigned": assignment_count,
+                "visitsCount": visit_count,
+                "genderRatio": study.get("genderRatio", {}),
+                "ageRange": study.get("ageRange", {}),
+                "remarks": study.get("remarksForStudy", "")
+            })
+        
+        logger.info(f"Found {len(results)} {status_upper} studies")
+        
+        return {
+            "success": True,
+            "status": status_upper,
+            "count": len(results),
+            "studies": results
+        }
+    except Exception as e:
+        logger.error(f"Error fetching studies by status {status}: {str(e)}")
+        return {
+            "success": False,
+            "error": str(e),
+            "studies": []
+        }
+
+
 @router.get("/dashboard/timeline-workload")
 async def get_timeline_workload(
     start: Optional[str] = None,

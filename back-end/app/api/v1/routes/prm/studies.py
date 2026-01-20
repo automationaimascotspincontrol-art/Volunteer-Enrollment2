@@ -329,27 +329,63 @@ async def delete_study_instance(
     instance_id: str,
     user: UserBase = Depends(get_current_user)
 ):
-    """Delete a study instance and all its associated visits."""
+    """Delete a study instance and CASCADE delete all associated data (visits, assignments, attendance)."""
     if user["role"] not in ["prm", "management", "game_master", "admin"]:
-         pass
+        raise HTTPException(status_code=403, detail="Not authorized to delete studies")
 
     try:
         oid = ObjectId(instance_id) if ObjectId.is_valid(instance_id) else instance_id
         
+        # Get study details BEFORE deletion for cascade cleanup
+        instance = await db.study_instances.find_one({"_id": oid})
+        
+        if not instance:
+            raise HTTPException(status_code=404, detail="Study instance not found")
+        
+        # Extract study code for cascade operations
+        study_code = instance.get("enteredStudyCode") or instance.get("studyInstanceCode")
+        
+        # ====== CASCADE DELETE ======
+        # 1. Delete study instance
         res_inst = await db.study_instances.delete_one({"_id": oid})
         
-        if res_inst.deleted_count == 0:
-            raise HTTPException(status_code=404, detail="Study instance not found")
-            
+        # 2. Delete all visits associated with this study
         res_visits = await db.study_visits.delete_many({"studyInstanceId": instance_id})
+        
+        # 3. Delete all volunteer assignments for this study
+        res_assignments = 0
+        if study_code:
+            delete_result = await db.assigned_studies.delete_many({"study_code": study_code})
+            res_assignments = delete_result.deleted_count
+        
+        # 4. Delete all attendance records for this study (if attendance collection exists)
+        res_attendance = 0
+        if study_code:
+            try:
+                # Check if attendance collection exists and has records
+                delete_result = await db.attendance.delete_many({"study_code": study_code})
+                res_attendance = delete_result.deleted_count
+            except Exception as attendance_err:
+                # Attendance collection might not exist or have different structure
+                logger.warning(f"Could not delete attendance for study {study_code}: {str(attendance_err)}")
+        
+        logger.info(f"CASCADE DELETE completed for study '{study_code}' (ID: {instance_id}): "
+                   f"instance=1, visits={res_visits.deleted_count}, "
+                   f"assignments={res_assignments}, attendance={res_attendance}")
         
         return {
             "success": True, 
             "deletedInstance": True, 
-            "deletedVisits": res_visits.deleted_count
+            "deletedVisits": res_visits.deleted_count,
+            "deletedAssignments": res_assignments,
+            "deletedAttendance": res_attendance,
+            "message": f"Study '{study_code}' and all related data deleted successfully"
         }
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error performing cascade delete for study {instance_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete study: {str(e)}")
 
 @router.put("/study-instance/{instance_id}")
 async def update_study_instance(
