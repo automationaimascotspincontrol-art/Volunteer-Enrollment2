@@ -899,14 +899,14 @@ const RecentEnrollment = () => {
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <h2 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '0.3rem', color: '#1e293b', letterSpacing: '-0.5px' }}>
-                                            Screening
+                                            Pre-screening
                                         </h2>
                                         <p style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '600' }}>
-                                            {data.screening.filter(v =>
-                                                !screeningSearch ||
-                                                v.basic_info?.name?.toLowerCase().includes(screeningSearch.toLowerCase()) ||
-                                                v.volunteer_id?.toLowerCase().includes(screeningSearch.toLowerCase()) ||
-                                                v.contact?.includes(screeningSearch)
+                                            {data.prescreening.filter(v =>
+                                                !prescreeningSearch ||
+                                                v.basic_info?.name?.toLowerCase().includes(prescreeningSearch.toLowerCase()) ||
+                                                v.volunteer_id?.toLowerCase().includes(prescreeningSearch.toLowerCase()) ||
+                                                v.contact?.includes(prescreeningSearch)
                                             ).length} initial enrollments
                                         </p>
                                     </div>
@@ -932,8 +932,8 @@ const RecentEnrollment = () => {
                                     <input
                                         type="text"
                                         placeholder="Search by name, ID, or contact..."
-                                        value={screeningSearch}
-                                        onChange={(e) => setScreeningSearch(e.target.value)}
+                                        value={prescreeningSearch}
+                                        onChange={(e) => setPrescreeningSearch(e.target.value)}
                                         style={{
                                             width: '100%',
                                             padding: '0.85rem 1rem 0.85rem 3rem',
@@ -956,20 +956,20 @@ const RecentEnrollment = () => {
                                     />
                                 </div>
 
-                                {data.screening.filter(v =>
-                                    !screeningSearch ||
-                                    v.basic_info?.name?.toLowerCase().includes(screeningSearch.toLowerCase()) ||
-                                    v.volunteer_id?.toLowerCase().includes(screeningSearch.toLowerCase()) ||
-                                    v.contact?.includes(screeningSearch)
+                                {data.prescreening.filter(v =>
+                                    !prescreeningSearch ||
+                                    v.basic_info?.name?.toLowerCase().includes(prescreeningSearch.toLowerCase()) ||
+                                    v.volunteer_id?.toLowerCase().includes(prescreeningSearch.toLowerCase()) ||
+                                    v.contact?.includes(prescreeningSearch)
                                 ).length === 0 ? (
                                     <div className="glass-card" style={{ padding: '3rem 2rem', textAlign: 'center', background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)' }}>
                                         <Users size={56} color="#cbd5e1" style={{ marginBottom: '1rem' }} />
                                         <p style={{ color: '#64748b', fontSize: '1rem', fontWeight: '600' }}>
-                                            {screeningSearch ? 'No matching volunteers found' : 'No screening volunteers'}
+                                            {prescreeningSearch ? 'No matching volunteers found' : 'No screening volunteers'}
                                         </p>
-                                        {screeningSearch && (
+                                        {prescreeningSearch && (
                                             <button
-                                                onClick={() => setScreeningSearch('')}
+                                                onClick={() => setPrescreeningSearch('')}
                                                 style={{
                                                     marginTop: '1rem',
                                                     padding: '0.5rem 1rem',
@@ -988,13 +988,13 @@ const RecentEnrollment = () => {
                                     </div>
                                 ) : (
                                     <div style={{ maxHeight: '600px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-                                        {data.screening.filter(v =>
-                                            !screeningSearch ||
-                                            v.basic_info?.name?.toLowerCase().includes(screeningSearch.toLowerCase()) ||
-                                            v.volunteer_id?.toLowerCase().includes(screeningSearch.toLowerCase()) ||
-                                            v.contact?.includes(screeningSearch)
+                                        {data.prescreening.filter(v =>
+                                            !prescreeningSearch ||
+                                            v.basic_info?.name?.toLowerCase().includes(prescreeningSearch.toLowerCase()) ||
+                                            v.volunteer_id?.toLowerCase().includes(prescreeningSearch.toLowerCase()) ||
+                                            v.contact?.includes(prescreeningSearch)
                                         ).map((volunteer) => (
-                                            <VolunteerCard key={volunteer.volunteer_id} volunteer={volunteer} status="screening" />
+                                            <VolunteerCard key={volunteer.volunteer_id} volunteer={volunteer} status="prescreening" />
                                         ))}
                                     </div>
                                 )}
