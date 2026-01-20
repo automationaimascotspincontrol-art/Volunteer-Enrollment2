@@ -22,7 +22,7 @@ import UserManagement from './pages/admin/UserManagement';
 import FullVolunteerSearch from './pages/admin/FullVolunteerSearch';
 import PRMDashboard from './pages/prm/PRMDashboard';
 import PRMCalendar from './pages/prm/PRMCalendar';
-import VolunteerTracker from './pages/prm/VolunteerTracker';
+import VolunteerTracker from './pages/prm/VolunteerTracker/index';
 import RecruiterStudyView from './pages/recruiter/RecruiterStudyView';
 import PRMLogin from './pages/prm/PRMLogin'; // Import PRM Login
 import RecentEnrollment from './pages/recruiter/RecentEnrollment';
