@@ -55,7 +55,7 @@ const FieldVisitChart = ({ title = "Field Visit Activity", initialData = null, i
             chartData = chartData.slice(-14);
         }
 
-        console.log(`FieldVisitChart: Processed ${chartData.length} items for period ${period}`);
+        // Data processed successfully
         setData(chartData);
     };
 
@@ -63,9 +63,9 @@ const FieldVisitChart = ({ title = "Field Visit Activity", initialData = null, i
         if (!initialData) setLoading(true);
 
         try {
-            console.log(`Fetching /dashboard/field-stats?period=${period}`);
+            // Fetching field stats
             const response = await api.get(`/dashboard/field-stats?period=${period}`);
-            console.log(`FieldVisitChart API response (${period}):`, response.data);
+            // API response received
 
             if (Array.isArray(response.data) && (response.data.length > 0 || data.length === 0)) {
                 processChartData(response.data);

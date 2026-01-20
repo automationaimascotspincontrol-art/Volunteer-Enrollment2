@@ -35,13 +35,6 @@ const AttendanceToggle = ({ volunteerId, volunteerName, assignedStudyId, studyCo
         setError(null);
 
         try {
-            // Debug: Log the values being sent
-            console.log('Toggle payload:', {
-                volunteerId,
-                volunteerName,
-                assignedStudyId,
-                studyCode
-            });
 
             if (!volunteerId || !assignedStudyId) {
                 setError('Missing volunteer or study information');

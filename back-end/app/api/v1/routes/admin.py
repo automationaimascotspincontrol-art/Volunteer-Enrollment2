@@ -32,13 +32,12 @@ class UserResponse(BaseModel):
 @router.post("/users", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def create_user(
     request: CreateUserRequest,
-    current_user: dict = Depends(deps.get_current_user),
+    current_user: dict = Depends(deps.require_permission(Permission.MANAGE_USERS)),
 ):
     """
     Create a new user.
-    Only admins can do this.
+    Only game_master and management roles can access this endpoint.
     """
-    deps.require_permission(Permission.MANAGE_USERS)
 
     try:
         user_id = await user_service.create_user(
@@ -64,13 +63,12 @@ async def create_user(
 async def get_audit_logs(
     entity_id: Optional[str] = None,
     limit: int = 100,
-    current_user: dict = Depends(deps.get_current_user),
+    current_user: dict = Depends(deps.require_permission(Permission.VIEW_AUDIT_LOGS)),
 ):
     """
     View audit logs.
-    Only admins can access this.
+    Only game_master and management roles can access this endpoint.
     """
-    deps.require_permission(Permission.VIEW_AUDIT_LOGS)
 
     if entity_id:
         logs = await audit_repo.find_by_entity("volunteer_master", entity_id, limit)
@@ -82,13 +80,12 @@ async def get_audit_logs(
 
 @router.get("/analytics")
 async def get_system_analytics(
-    current_user: dict = Depends(deps.get_current_user),
+    current_user: dict = Depends(deps.require_permission(Permission.VIEW_SYSTEM_ANALYTICS)),
 ):
     """
     View system analytics and dashboards.
-    Only admins can access this.
+    Only game_master and management roles can access this endpoint.
     """
-    deps.require_permission(Permission.VIEW_SYSTEM_ANALYTICS)
 
     # Placeholder: In real implementation, compute analytics from volunteer_repo
     return {
@@ -153,13 +150,15 @@ async def get_dashboard_volunteers(
                 {"basic_info.gender": gender}
             ]
         if search:
+            from app.core.validators import sanitize_regex_input
+            safe_search = sanitize_regex_input(search)
             query["$or"] = [
-                {"volunteer_id": {"$regex": search, "$options": "i"}},
-                {"subject_code": {"$regex": search, "$options": "i"}},
-                {"pre_screening.name": {"$regex": search, "$options": "i"}},
-                {"pre_screening.contact": {"$regex": search, "$options": "i"}},
-                {"basic_info.name": {"$regex": search, "$options": "i"}},
-                {"basic_info.contact": {"$regex": search, "$options": "i"}}
+                {"volunteer_id": {"$regex": safe_search, "$options": "i"}},
+                {"subject_code": {"$regex": safe_search, "$options": "i"}},
+                {"pre_screening.name": {"$regex": safe_search, "$options": "i"}},
+                {"pre_screening.contact": {"$regex": safe_search, "$options": "i"}},
+                {"basic_info.name": {"$regex": safe_search, "$options": "i"}},
+                {"basic_info.contact": {"$regex": safe_search, "$options": "i"}}
             ]
         
         # Get total count

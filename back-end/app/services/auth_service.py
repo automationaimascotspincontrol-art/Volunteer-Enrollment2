@@ -43,18 +43,27 @@ async def authenticate_user(username: str, password: str) -> dict:
     Authenticate a user by username and password.
     Returns user data with access token.
     Raises AuthenticationFailed if invalid.
+    
+    Security: Uses constant-time comparison to prevent timing attacks
+    that could reveal if a username exists.
     """
     user = await db.users.find_one({"username": username})
-    if not user:
-        raise AuthenticationFailed("Invalid credentials")
+    
+    # Use dummy hash if user not found to prevent timing attacks
+    dummy_hash = "$2b$12$dummyhashfordummyhashfordummyhashfordummyhashfordummyhashfo"
+    hash_to_check = user.get("hashed_password") if user else dummy_hash
 
-    if not verify_password(password, user.get("hashed_password", "")):
+    # Always verify password, even if user doesn't exist
+    password_valid = verify_password(password, hash_to_check)
+    
+    # Only succeed if both user exists AND password is valid
+    if not user or not password_valid:
         raise AuthenticationFailed("Invalid credentials")
 
     # Generate access token
     access_token = create_access_token(
         data={"sub": user["username"]},
-        expires_delta=timedelta(minutes=480)  # 8 hours
+        expires_delta=timedelta(minutes=120)  # 2 hours (reduced from 8)
     )
 
     return {

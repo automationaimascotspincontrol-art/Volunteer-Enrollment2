@@ -40,3 +40,22 @@ def validate_id(id_type: str, value: str) -> bool:
         return True 
         
     return bool(re.match(pattern, value))
+
+
+def sanitize_regex_input(search_str: str) -> str:
+    """
+    Sanitize user input for use in MongoDB regex queries.
+    Escapes special regex characters to prevent NoSQL injection and ReDoS attacks.
+    
+    Args:
+        search_str: Raw search string from user input
+        
+    Returns:
+        Escaped string safe for use in regex queries
+        
+    Example:
+        >>> sanitize_regex_input("user.*")
+        'user\\\\.\\\\*'
+    """
+    # Escape all special regex characters
+    return re.escape(search_str)

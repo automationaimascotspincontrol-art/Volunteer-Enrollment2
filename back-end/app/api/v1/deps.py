@@ -29,12 +29,13 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
         )
 
 
-async def require_permission(
+
+def require_permission(
     required_permission: Permission,
 ):
     """
     Factory to create a permission checker dependency.
-    Usage: @app.get("/...", dependencies=[Depends(require_permission(Permission.VIEW_FIELD_DRAFT))])
+    Usage: current_user: dict = Depends(require_permission(Permission.MANAGE_USERS))
     """
     async def permission_check(current_user: dict = Depends(get_current_user)):
         try:

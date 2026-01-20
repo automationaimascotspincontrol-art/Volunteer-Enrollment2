@@ -1,12 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from datetime import datetime, timezone
 from typing import List, Optional
 from pydantic import BaseModel
+import logging
 
 from app.api.v1.deps import get_current_user
 from app.db.mongodb import db
 from app.db.odm.volunteer_attendance import VolunteerAttendance
 from app.db.odm.assigned_study import AssignedStudy
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/volunteers", tags=["volunteers"])
 
@@ -73,18 +76,11 @@ async def get_volunteer_stats(current_user: dict = Depends(get_current_user)):
             "medicalUnfit": 0
         }
     except Exception as e:
-        print(f"Error fetching stats: {e}")
-        # Return mock data if collection doesn't exist yet
-        return {
-            "screening": 15,
-            "prescreening": 8,
-            "approved": 27,
-            "checkedInToday": 0,
-            # Legacy
-            "preRegistration": 23,
-            "medicalFit": 8,
-            "medicalUnfit": 0
-        }
+        logger.error(f"Error fetching volunteer stats: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch volunteer statistics"
+        )
 
 
 @router.get("/pre-registration")
@@ -116,31 +112,11 @@ async def get_pre_registration_volunteers(current_user: dict = Depends(get_curre
         
         return result
     except Exception as e:
-        # Return mock data if schema doesn't match
-        return [
-            {
-                "id": "1",
-                "volunteer_id": "V001",
-                "name": "John Doe",
-                "contact": "9876543210",
-                "age": 25,
-                "gender": "Male",
-                "medical_status": "pending",
-                "registration_date": datetime.now(timezone.utc).isoformat(),
-                "stage": "pre_screening"
-            },
-            {
-                "id": "2",
-                "volunteer_id": "V002",
-                "name": "Jane Smith",
-                "contact": "9876543211",
-                "age": 28,
-                "gender": "Female",
-                "medical_status": "fit",
-                "registration_date": datetime.now(timezone.utc).isoformat(),
-                "stage": "pending"
-            }
-        ]
+        logger.error(f"Error fetching pre-registration volunteers: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch pre-registration volunteers"
+        )
 
 
 @router.get("/approved")
@@ -272,34 +248,11 @@ async def get_approved_volunteers(
         
         return result
     except Exception as e:
-        print(f"Error fetching approved volunteers: {e}")
-        # Return mock data
-        return [
-            {
-                "id": "3",
-                "volunteer_id": "V003",
-                "name": "Sarah Wilson",
-                "contact": "9876543212",
-                "age": 30,
-                "gender": "Female",
-                "attendance_status": "IN",
-                "check_in_time": datetime.now(timezone.utc).isoformat(),
-                "last_check_out": None,
-                "approval_date": datetime.now(timezone.utc).isoformat()
-            },
-            {
-                "id": "4",
-                "volunteer_id": "V004",
-                "name": "Tom Brown",
-                "contact": "9876543213",
-                "age": 27,
-                "gender": "Male",
-                "attendance_status": "OUT",
-                "check_in_time": None,
-                "last_check_out": datetime.now(timezone.utc).isoformat(),
-                "approval_date": datetime.now(timezone.utc).isoformat()
-            }
-        ]
+        logger.error(f"Error fetching approved volunteers: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch approved volunteers"
+        )
 
 
 @router.post("/attendance/toggle")
