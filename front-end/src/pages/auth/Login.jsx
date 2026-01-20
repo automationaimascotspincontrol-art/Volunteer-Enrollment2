@@ -212,7 +212,7 @@ const Login = () => {
                             fontSize: '1.05rem',
                             margin: 0
                         }}>
-                            Sign in to access your dashboard
+                            Sign in to access
                         </p>
                     </div>
 

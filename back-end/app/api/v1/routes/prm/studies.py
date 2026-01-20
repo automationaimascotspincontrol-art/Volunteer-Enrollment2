@@ -98,10 +98,18 @@ async def create_study_instance(
         age_to = age_range.get("to")
         if age_from is None or age_to is None:
             validation_errors.append("Age range must be specified")
-        elif age_from < 0 or age_to < 0:
-            validation_errors.append("Age range cannot be negative")
-        elif age_from >= age_to:
-            validation_errors.append(f"Age 'from' ({age_from}) must be less than 'to' ({age_to})")
+        else:
+            # Convert to int for comparison (fixes TypeError)
+            try:
+                age_from = int(age_from)
+                age_to = int(age_to)
+                
+                if age_from < 0 or age_to < 0:
+                    validation_errors.append("Age range cannot be negative")
+                elif age_from >= age_to:
+                    validation_errors.append(f"Age 'from' ({age_from}) must be less than 'to' ({age_to})")
+            except (ValueError, TypeError):
+                validation_errors.append("Age range must be valid numbers")
 
     # 5. Date Validation
     start_date_str = instance_data.get("startDate")
