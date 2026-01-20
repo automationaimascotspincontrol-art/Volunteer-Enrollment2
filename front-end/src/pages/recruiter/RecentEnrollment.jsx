@@ -77,9 +77,9 @@ const RecentEnrollment = () => {
 
         return (
             <div style={{
-                padding: '1.75rem',
-                marginBottom: '1.25rem',
-                borderRadius: '20px',
+                padding: '1.25rem',
+                marginBottom: '0.75rem',
+                borderRadius: '16px',
                 background: 'white',
                 border: `2px solid ${statusConfig.bgLight}`,
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -89,12 +89,12 @@ const RecentEnrollment = () => {
                 boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
             }}
                 onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px) scale(1.01)';
-                    e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.12)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.1)';
                     e.currentTarget.style.borderColor = statusConfig.color;
                 }}
                 onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                    e.currentTarget.style.transform = 'translateY(0)';
                     e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
                     e.currentTarget.style.borderColor = statusConfig.bgLight;
                 }}
@@ -105,187 +105,156 @@ const RecentEnrollment = () => {
                     top: 0,
                     left: 0,
                     right: 0,
-                    height: '5px',
+                    height: '3px',
                     background: statusConfig.bg
                 }} />
 
                 {/* Status Badge */}
                 <div style={{
                     position: 'absolute',
-                    top: '1.5rem',
-                    right: '1.5rem',
-                    padding: '0.5rem 1rem',
+                    top: '1rem',
+                    right: '1rem',
+                    padding: '0.35rem 0.75rem',
                     borderRadius: '50px',
-                    fontSize: '0.75rem',
+                    fontSize: '0.65rem',
                     fontWeight: '800',
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px',
                     background: statusConfig.bg,
                     color: 'white',
-                    boxShadow: `0 4px 12px ${statusConfig.color}40`
+                    boxShadow: `0 2px 8px ${statusConfig.color}40`
                 }}>
                     {statusConfig.label}
                 </div>
 
-                <div style={{ paddingRight: '8rem' }}>
+                <div style={{ paddingRight: '6rem' }}>
                     {/* Name */}
                     <h3 style={{
-                        fontSize: '1.5rem',
-                        fontWeight: '900',
-                        marginBottom: '1.25rem',
+                        fontSize: '1.15rem',
+                        fontWeight: '800',
+                        marginBottom: '0.75rem',
                         color: '#0f172a',
-                        letterSpacing: '-0.03em',
+                        letterSpacing: '-0.02em',
                         lineHeight: '1.2'
                     }}>
                         {volunteer.basic_info?.name || 'N/A'}
                     </h3>
 
-                    {/* ID Section - Enhanced with Subject Code */}
+                    {/* ID Section - Compact */}
                     <div style={{
                         display: 'flex',
-                        gap: '1rem',
-                        marginBottom: '1.25rem',
+                        gap: '0.5rem',
+                        marginBottom: '0.75rem',
                         flexWrap: 'wrap'
                     }}>
-                        {/* Subject Code Badge */}
+                        {/* Subject Code Badge - Compact */}
                         {volunteer.subject_code && (
                             <div style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '0.5rem',
-                                padding: '0.6rem 1rem',
+                                gap: '0.35rem',
+                                padding: '0.4rem 0.65rem',
                                 background: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)',
-                                borderRadius: '12px',
-                                boxShadow: '0 4px 12px rgba(236, 72, 153, 0.25)'
+                                borderRadius: '8px',
+                                boxShadow: '0 2px 8px rgba(236, 72, 153, 0.2)'
                             }}>
-                                <FileText size={16} color="white" strokeWidth={2.5} />
+                                <FileText size={13} color="white" strokeWidth={2.5} />
                                 <div>
-                                    <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.8)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                        Subject Code
+                                    <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.75)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                                        Subject
                                     </div>
-                                    <div style={{ fontSize: '0.95rem', color: 'white', fontWeight: '800', fontFamily: 'monospace', letterSpacing: '0.5px' }}>
+                                    <div style={{ fontSize: '0.8rem', color: 'white', fontWeight: '800', fontFamily: 'monospace', letterSpacing: '0.3px' }}>
                                         {volunteer.subject_code}
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* Volunteer ID Badge */}
+                        {/* Volunteer ID Badge - Compact */}
                         <div style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.6rem 1rem',
+                            gap: '0.35rem',
+                            padding: '0.4rem 0.65rem',
                             background: statusConfig.bgLight,
-                            borderRadius: '12px',
+                            borderRadius: '8px',
                             border: `1.5px solid ${statusConfig.color}30`
                         }}>
-                            <User size={16} color={statusConfig.color} strokeWidth={2.5} />
+                            <User size={13} color={statusConfig.color} strokeWidth={2.5} />
                             <div>
-                                <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                    Volunteer ID
+                                <div style={{ fontSize: '0.55rem', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                                    Vol ID
                                 </div>
-                                <div style={{ fontSize: '0.95rem', color: statusConfig.color, fontWeight: '800', fontFamily: 'monospace', letterSpacing: '0.5px' }}>
+                                <div style={{ fontSize: '0.8rem', color: statusConfig.color, fontWeight: '800', fontFamily: 'monospace', letterSpacing: '0.3px' }}>
                                     {volunteer.volunteer_id}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Details Grid */}
+                    {/* Details Grid - Compact */}
                     <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                        display: 'flex',
                         gap: '1rem',
-                        marginBottom: '1rem'
+                        marginBottom: '0.75rem',
+                        flexWrap: 'wrap'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <div style={{
-                                padding: '0.5rem',
-                                background: 'rgba(16, 185, 129, 0.1)',
-                                borderRadius: '8px'
-                            }}>
-                                <Phone size={16} style={{ color: '#10b981' }} />
-                            </div>
-                            <div>
-                                <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                                    Contact
-                                </div>
-                                <div style={{ fontSize: '0.9rem', color: '#334155', fontWeight: '700' }}>
-                                    {volunteer.contact || volunteer.basic_info?.contact}
-                                </div>
-                            </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <Phone size={14} style={{ color: '#10b981' }} />
+                            <span style={{ fontSize: '0.8rem', color: '#334155', fontWeight: '600' }}>
+                                {volunteer.contact || volunteer.basic_info?.contact}
+                            </span>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <div style={{
-                                padding: '0.5rem',
-                                background: 'rgba(99, 102, 241, 0.1)',
-                                borderRadius: '8px'
-                            }}>
-                                <Users size={16} style={{ color: '#6366f1' }} />
-                            </div>
-                            <div>
-                                <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                                    Gender
-                                </div>
-                                <div style={{ fontSize: '0.9rem', color: '#334155', fontWeight: '700', textTransform: 'capitalize' }}>
-                                    {volunteer.basic_info?.gender?.replace('_', ' ')}
-                                </div>
-                            </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <Users size={14} style={{ color: '#6366f1' }} />
+                            <span style={{ fontSize: '0.8rem', color: '#334155', fontWeight: '600', textTransform: 'capitalize' }}>
+                                {volunteer.basic_info?.gender?.replace('_', ' ')}
+                            </span>
                         </div>
-                    </div>
 
-                    {/* Enrollment Date */}
-                    <div style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        padding: '0.5rem 0.75rem',
-                        background: 'rgba(99, 102, 241, 0.05)',
-                        borderRadius: '8px',
-                        fontSize: '0.8rem',
-                        color: '#64748b',
-                        fontWeight: '600'
-                    }}>
-                        <Calendar size={14} style={{ color: '#6366f1' }} />
-                        Enrolled: {formatDate(volunteer.audit?.created_at)}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <Calendar size={14} style={{ color: '#94a3b8' }} />
+                            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '500' }}>
+                                {formatDate(volunteer.audit?.created_at)}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                {/* View Details Button */}
+                {/* View Details Button - Compact */}
                 <button
                     onClick={() => setSelectedVolunteer(volunteer)}
                     style={{
                         position: 'absolute',
-                        bottom: '1.5rem',
-                        right: '1.5rem',
-                        padding: '0.75rem 1.5rem',
+                        bottom: '1rem',
+                        right: '1rem',
+                        padding: '0.55rem 1rem',
                         background: statusConfig.bg,
                         color: 'white',
                         border: 'none',
-                        borderRadius: '12px',
-                        fontSize: '0.9rem',
-                        fontWeight: '800',
+                        borderRadius: '10px',
+                        fontSize: '0.8rem',
+                        fontWeight: '700',
                         cursor: 'pointer',
-                        transition: 'all 0.3s ease',
-                        boxShadow: `0 4px 12px ${statusConfig.color}30`,
+                        transition: 'all 0.2s ease',
+                        boxShadow: `0 2px 8px ${statusConfig.color}30`,
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5rem',
+                        gap: '0.4rem',
                         letterSpacing: '0.3px'
                     }}
                     onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.08)';
-                        e.currentTarget.style.boxShadow = `0 8px 20px ${statusConfig.color}50`;
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                        e.currentTarget.style.boxShadow = `0 4px 12px ${statusConfig.color}50`;
                     }}
                     onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.boxShadow = `0 4px 12px ${statusConfig.color}30`;
+                        e.currentTarget.style.boxShadow = `0 2px 8px ${statusConfig.color}30`;
                     }}
                 >
-                    View Details
-                    <ArrowRight size={18} strokeWidth={3} />
+                    View
+                    <ArrowRight size={15} strokeWidth={2.5} />
                 </button>
             </div>
         );

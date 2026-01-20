@@ -139,17 +139,47 @@ async def approve_volunteer(
             detail=f"Volunteer must be in prescreening status to approve. Current status: {volunteer.get('current_status')}"
         )
     
+    
+    # Generate Subject Code if missing
+    from app.utils.id_generation import generate_unique_subject_code
+    from app.repositories import volunteer_repo
+    
+    update_fields = {
+        "current_status": "approved",
+        "audit.updated_at": datetime.utcnow(),
+        "audit.updated_by": current_user.get("name", current_user.get("username"))
+    }
+    
+    # Check if subject_code is missing and generate it
+    if not volunteer.get("subject_code"):
+        basic_info = volunteer.get("basic_info", {})
+        pre_screening = volunteer.get("pre_screening", {})
+        
+        # Extract first_name and surname
+        first_name = (
+            basic_info.get("first_name") or
+            pre_screening.get("first_name") or
+            basic_info.get("name", "Unknown").split()[0] if basic_info.get("name") else "Unknown"
+        )
+        
+        surname = (
+            basic_info.get("surname") or
+            pre_screening.get("surname") or
+            basic_info.get("name", "Unknown").split()[-1] if basic_info.get("name") else "Unknown"
+        )
+        
+        subject_code = await generate_unique_subject_code(
+            first_name=first_name,
+            surname=surname,
+            check_exists_async=volunteer_repo.check_subject_code_exists
+        )
+        
+        update_fields["subject_code"] = subject_code
+    
     # Update status to approved
-    from datetime import datetime
     result = await db.volunteers_master.update_one(
         {"volunteer_id": volunteer_id},
-        {
-            "$set": {
-                "current_status": "approved",
-                "audit.updated_at": datetime.utcnow(),
-                "audit.updated_by": current_user.get("name", current_user.get("username"))
-            }
-        }
+        {"$set": update_fields}
     )
     
     if result.modified_count == 0:

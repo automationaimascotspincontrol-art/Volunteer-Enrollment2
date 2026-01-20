@@ -3,6 +3,8 @@ from app.db.models.volunteer import PreScreeningCreate, VolunteerDocument, Recru
 from app.api.v1.deps import get_current_user
 from app.db.mongodb import db
 from app.utils.id_generator import generate_volunteer_id
+from app.utils.id_generation import generate_unique_subject_code
+from app.repositories import volunteer_repo
 from datetime import datetime
 
 router = APIRouter()
@@ -45,12 +47,21 @@ async def create_prescreening(
                 detail="Volunteer age cannot exceed 50 years."
             )
     
+    
     # Combine name fields
     full_name = f"{data.first_name} {data.middle_name} {data.surname}" if data.middle_name else f"{data.first_name} {data.surname}"
+    
+    # Generate Subject Code
+    subject_code = await generate_unique_subject_code(
+        first_name=data.first_name,
+        surname=data.surname,
+        check_exists_async=volunteer_repo.check_subject_code_exists
+    )
     
     # 1. Create Master Record
     master_doc = {
         "volunteer_id": volunteer_id,
+        "subject_code": subject_code,  # Add subject code
         "legacy_id": None,
         "current_stage": "pre_screening",
         "current_status": "submitted",
