@@ -1266,8 +1266,14 @@ const SBoard = () => {
                                                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: '600' }}>Name</p>
                                                     <p style={{ fontWeight: '600', fontSize: '1rem', margin: 0 }}>{volunteer.pre_screening?.name || 'N/A'}</p>
                                                 </div>
+                                                {volunteer.subject_code && (
+                                                    <div>
+                                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: '600' }}>Subject Code</p>
+                                                        <p style={{ fontWeight: '700', fontSize: '0.95rem', margin: 0, fontFamily: 'monospace', color: '#ec4899', letterSpacing: '0.5px' }}>{volunteer.subject_code}</p>
+                                                    </div>
+                                                )}
                                                 <div>
-                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: '600' }}>ID</p>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: '600' }}>Volunteer ID</p>
                                                     <p style={{ fontWeight: '500', fontSize: '0.9rem', margin: 0, fontFamily: 'monospace', color: '#6366f1' }}>{volunteer.volunteer_id}</p>
                                                 </div>
                                                 <div>
@@ -1429,8 +1435,14 @@ const SBoard = () => {
                                                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: '600' }}>Name</p>
                                                     <p style={{ fontWeight: '600', fontSize: '1rem', margin: 0 }}>{volunteer.pre_screening?.name || 'N/A'}</p>
                                                 </div>
+                                                {volunteer.subject_code && (
+                                                    <div>
+                                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: '600' }}>Subject Code</p>
+                                                        <p style={{ fontWeight: '700', fontSize: '0.95rem', margin: 0, fontFamily: 'monospace', color: '#ec4899', letterSpacing: '0.5px' }}>{volunteer.subject_code}</p>
+                                                    </div>
+                                                )}
                                                 <div>
-                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: '600' }}>ID</p>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textTransform: 'uppercase', fontWeight: '600' }}>Volunteer ID</p>
                                                     <p style={{ fontWeight: '500', fontSize: '0.9rem', margin: 0, fontFamily: 'monospace', color: '#6366f1' }}>{volunteer.volunteer_id}</p>
                                                 </div>
                                                 <div>

@@ -46,25 +46,29 @@ const RecentEnrollment = () => {
                     return {
                         color: '#6366f1',
                         bg: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                        label: '📋 Screening'
+                        label: '📋 Screening',
+                        bgLight: 'rgba(99, 102, 241, 0.08)'
                     };
                 case 'prescreening':
                     return {
                         color: '#f59e0b',
                         bg: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                        label: '⏱ Pre-screening'
+                        label: '⏱ Pre-screening',
+                        bgLight: 'rgba(245, 158, 11, 0.08)'
                     };
                 case 'approved':
                     return {
                         color: '#10b981',
                         bg: 'linear-gradient(135deg, #10b981, #059669)',
-                        label: '✓ Approved'
+                        label: '✓ Approved',
+                        bgLight: 'rgba(16, 185, 129, 0.08)'
                     };
                 default:
                     return {
                         color: '#94a3b8',
                         bg: '#94a3b8',
-                        label: status
+                        label: status,
+                        bgLight: 'rgba(148, 163, 184, 0.08)'
                     };
             }
         };
@@ -72,118 +76,216 @@ const RecentEnrollment = () => {
         const statusConfig = getStatusConfig();
 
         return (
-            <div className="glass-card" style={{
-                padding: '1.25rem',
-                marginBottom: '1rem',
-                borderLeft: `4px solid ${statusConfig.color}`,
-                transition: 'all 0.3s ease',
+            <div style={{
+                padding: '1.75rem',
+                marginBottom: '1.25rem',
+                borderRadius: '20px',
+                background: 'white',
+                border: `2px solid ${statusConfig.bgLight}`,
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 cursor: 'pointer',
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)',
-                backdropFilter: 'blur(10px)',
-                boxShadow: '0 4px 15px rgba(0,0,0,0.08)',
                 position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
             }}
                 onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.12)';
+                    e.currentTarget.style.transform = 'translateY(-4px) scale(1.01)';
+                    e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.12)';
+                    e.currentTarget.style.borderColor = statusConfig.color;
                 }}
                 onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.08)';
+                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
+                    e.currentTarget.style.borderColor = statusConfig.bgLight;
                 }}
             >
+                {/* Gradient Accent Bar */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '5px',
+                    background: statusConfig.bg
+                }} />
+
                 {/* Status Badge */}
                 <div style={{
                     position: 'absolute',
-                    top: '1rem',
-                    right: '1rem',
-                    padding: '0.35rem 0.75rem',
-                    borderRadius: '20px',
-                    fontSize: '0.7rem',
-                    fontWeight: '700',
+                    top: '1.5rem',
+                    right: '1.5rem',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '50px',
+                    fontSize: '0.75rem',
+                    fontWeight: '800',
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px',
                     background: statusConfig.bg,
                     color: 'white',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                    boxShadow: `0 4px 12px ${statusConfig.color}40`
                 }}>
                     {statusConfig.label}
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', paddingRight: '6rem' }}>
-                    <div style={{ flex: 1 }}>
-                        <h3 style={{
-                            fontSize: '1.2rem',
-                            fontWeight: '700',
-                            marginBottom: '0.75rem',
-                            color: '#1e293b',
-                            letterSpacing: '-0.5px'
-                        }}>
-                            {volunteer.basic_info?.name || 'N/A'}
-                        </h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem', fontSize: '0.85rem', color: '#64748b', marginBottom: '0.75rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                <User size={14} style={{ color: '#667eea' }} />
-                                <span><strong style={{ color: '#334155' }}>ID:</strong> {volunteer.volunteer_id}</span>
+                <div style={{ paddingRight: '8rem' }}>
+                    {/* Name */}
+                    <h3 style={{
+                        fontSize: '1.5rem',
+                        fontWeight: '900',
+                        marginBottom: '1.25rem',
+                        color: '#0f172a',
+                        letterSpacing: '-0.03em',
+                        lineHeight: '1.2'
+                    }}>
+                        {volunteer.basic_info?.name || 'N/A'}
+                    </h3>
+
+                    {/* ID Section - Enhanced with Subject Code */}
+                    <div style={{
+                        display: 'flex',
+                        gap: '1rem',
+                        marginBottom: '1.25rem',
+                        flexWrap: 'wrap'
+                    }}>
+                        {/* Subject Code Badge */}
+                        {volunteer.subject_code && (
+                            <div style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                padding: '0.6rem 1rem',
+                                background: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)',
+                                borderRadius: '12px',
+                                boxShadow: '0 4px 12px rgba(236, 72, 153, 0.25)'
+                            }}>
+                                <FileText size={16} color="white" strokeWidth={2.5} />
+                                <div>
+                                    <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.8)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                        Subject Code
+                                    </div>
+                                    <div style={{ fontSize: '0.95rem', color: 'white', fontWeight: '800', fontFamily: 'monospace', letterSpacing: '0.5px' }}>
+                                        {volunteer.subject_code}
+                                    </div>
+                                </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                <Phone size={14} style={{ color: '#10b981' }} />
-                                <span><strong style={{ color: '#334155' }}>Contact:</strong> {volunteer.contact || volunteer.basic_info?.contact}</span>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                <Users size={14} style={{ color: '#ec4899' }} />
-                                <span><strong style={{ color: '#334155' }}>Gender:</strong> {volunteer.basic_info?.gender}</span>
-                            </div>
-                        </div>
+                        )}
+
+                        {/* Volunteer ID Badge */}
                         <div style={{
-                            display: 'flex',
+                            display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '0.4rem',
-                            fontSize: '0.8rem',
-                            color: '#94a3b8',
-                            padding: '0.5rem 0.75rem',
-                            background: 'rgba(99, 102, 241, 0.05)',
-                            borderRadius: '8px',
-                            width: 'fit-content'
+                            gap: '0.5rem',
+                            padding: '0.6rem 1rem',
+                            background: statusConfig.bgLight,
+                            borderRadius: '12px',
+                            border: `1.5px solid ${statusConfig.color}30`
                         }}>
-                            <Calendar size={14} style={{ color: '#667eea' }} />
-                            Enrolled: {formatDate(volunteer.audit?.created_at)}
+                            <User size={16} color={statusConfig.color} strokeWidth={2.5} />
+                            <div>
+                                <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                    Volunteer ID
+                                </div>
+                                <div style={{ fontSize: '0.95rem', color: statusConfig.color, fontWeight: '800', fontFamily: 'monospace', letterSpacing: '0.5px' }}>
+                                    {volunteer.volunteer_id}
+                                </div>
+                            </div>
                         </div>
+                    </div>
+
+                    {/* Details Grid */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                        gap: '1rem',
+                        marginBottom: '1rem'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{
+                                padding: '0.5rem',
+                                background: 'rgba(16, 185, 129, 0.1)',
+                                borderRadius: '8px'
+                            }}>
+                                <Phone size={16} style={{ color: '#10b981' }} />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                                    Contact
+                                </div>
+                                <div style={{ fontSize: '0.9rem', color: '#334155', fontWeight: '700' }}>
+                                    {volunteer.contact || volunteer.basic_info?.contact}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{
+                                padding: '0.5rem',
+                                background: 'rgba(99, 102, 241, 0.1)',
+                                borderRadius: '8px'
+                            }}>
+                                <Users size={16} style={{ color: '#6366f1' }} />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                                    Gender
+                                </div>
+                                <div style={{ fontSize: '0.9rem', color: '#334155', fontWeight: '700', textTransform: 'capitalize' }}>
+                                    {volunteer.basic_info?.gender?.replace('_', ' ')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Enrollment Date */}
+                    <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.5rem 0.75rem',
+                        background: 'rgba(99, 102, 241, 0.05)',
+                        borderRadius: '8px',
+                        fontSize: '0.8rem',
+                        color: '#64748b',
+                        fontWeight: '600'
+                    }}>
+                        <Calendar size={14} style={{ color: '#6366f1' }} />
+                        Enrolled: {formatDate(volunteer.audit?.created_at)}
                     </div>
                 </div>
 
+                {/* View Details Button */}
                 <button
                     onClick={() => setSelectedVolunteer(volunteer)}
                     style={{
                         position: 'absolute',
-                        bottom: '1.25rem',
-                        right: '1.25rem',
-                        padding: '0.65rem 1.25rem',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        bottom: '1.5rem',
+                        right: '1.5rem',
+                        padding: '0.75rem 1.5rem',
+                        background: statusConfig.bg,
                         color: 'white',
                         border: 'none',
-                        borderRadius: '10px',
-                        fontSize: '0.85rem',
-                        fontWeight: '700',
+                        borderRadius: '12px',
+                        fontSize: '0.9rem',
+                        fontWeight: '800',
                         cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                        transition: 'all 0.3s ease',
+                        boxShadow: `0 4px 12px ${statusConfig.color}30`,
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5rem'
+                        gap: '0.5rem',
+                        letterSpacing: '0.3px'
                     }}
                     onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.05)';
-                        e.currentTarget.style.boxShadow = '0 6px 18px rgba(102, 126, 234, 0.4)';
+                        e.currentTarget.style.transform = 'scale(1.08)';
+                        e.currentTarget.style.boxShadow = `0 8px 20px ${statusConfig.color}50`;
                     }}
                     onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                        e.currentTarget.style.boxShadow = `0 4px 12px ${statusConfig.color}30`;
                     }}
                 >
                     View Details
-                    <ArrowRight size={16} />
+                    <ArrowRight size={18} strokeWidth={3} />
                 </button>
             </div>
         );
@@ -341,6 +443,22 @@ const RecentEnrollment = () => {
                                 <User size={20} color="white" />
                             </div>
                             <div style={{ flex: 1 }}>
+                                {/* Subject Code */}
+                                {volunteer.subject_code && (
+                                    <>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>Subject Code</p>
+                                        <p style={{
+                                            fontSize: '1.1rem',
+                                            fontWeight: '800',
+                                            fontFamily: 'monospace',
+                                            color: '#ec4899',
+                                            marginBottom: '0.8rem',
+                                            letterSpacing: '0.5px'
+                                        }}>
+                                            {volunteer.subject_code}
+                                        </p>
+                                    </>
+                                )}
                                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>Volunteer ID</p>
                                 <p style={{ fontSize: '1rem', fontWeight: '600' }}>{volunteer.volunteer_id}</p>
                                 {volunteer.legacy_id && (
