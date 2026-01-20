@@ -5,36 +5,66 @@ import { Users, CheckCircle, Clock, Activity, RefreshCw, XCircle, ScanBarcode, L
 import { useAuth } from '../../context/AuthContext';
 import * as XLSX from 'xlsx';
 
-const StatCard = ({ title, value, subtitle, icon: Icon, colorVar, onClick }) => (
-    <div
-        onClick={onClick}
-        style={{
-            padding: '1.5rem',
-            background: `linear-gradient(135deg, var(${colorVar}) 0%, var(${colorVar}) 100%)`,
-            borderRadius: '16px',
-            color: 'white',
-            boxShadow: `0 4px 15px var(${colorVar})40`,
-            cursor: onClick ? 'pointer' : 'default',
-            transition: 'all 0.3s',
-            position: 'relative',
-            overflow: 'hidden'
-        }}
-        onMouseEnter={(e) => onClick && (e.currentTarget.style.transform = 'translateY(-4px)')}
-        onMouseLeave={(e) => onClick && (e.currentTarget.style.transform = 'translateY(0)')}
-    >
-        <div style={{ position: 'absolute', top: '-20px', right: '-20px', opacity: 0.1 }}>
-            <Icon size={100} />
-        </div>
-        <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                <Icon size={24} />
-                <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.9, fontWeight: '600' }}>{title}</p>
+// Enhanced StatCard with VBoard-style premium design
+const StatCard = ({ title, value, subtitle, icon: Icon, colorVar, onClick }) => {
+    const colorMap = {
+        '--chart-blue': { gradient: 'linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)', shadow: 'rgba(59, 130, 246, 0.3)', iconBg: 'rgba(59, 130, 246, 0.15)' },
+        '--accent': { gradient: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)', shadow: 'rgba(245, 158, 11, 0.3)', iconBg: 'rgba(245, 158, 11, 0.15)' },
+        '--chart-purple': { gradient: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)', shadow: 'rgba(139, 92, 246, 0.3)', iconBg: 'rgba(139, 92, 246, 0.15)' },
+        '--success': { gradient: 'linear-gradient(135deg, #10b981 0%, #14b8a6 100%)', shadow: 'rgba(16, 185, 129, 0.3)', iconBg: 'rgba(16, 185, 129, 0.15)' }
+    };
+    const colors = colorMap[colorVar] || colorMap['--success'];
+
+    return (
+        <div
+            onClick={onClick}
+            style={{
+                padding: '0',
+                background: colors.gradient,
+                border: 'none',
+                borderRadius: '20px',
+                boxShadow: `0 4px 15px ${colors.shadow}`,
+                cursor: onClick ? 'pointer' : 'default',
+                transition: 'all 0.3s ease',
+                position: 'relative',
+                overflow: 'hidden'
+            }}
+            onMouseEnter={(e) => {
+                e.currentTarget.style.transform = onClick ? 'translateY(-4px)' : 'scale(1.02)';
+                e.currentTarget.style.boxShadow = `0 8px 25px ${colors.shadow}`;
+            }}
+            onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                e.currentTarget.style.boxShadow = `0 4px 15px ${colors.shadow}`;
+            }}
+        >
+            {/* Background Icon */}
+            <div style={{ position: 'absolute', top: '-30px', right: '-30px', opacity: 0.1 }}>
+                <Icon size={120} color="white" />
             </div>
-            <h2 style={{ margin: '0.5rem 0', fontSize: '2.5rem', fontWeight: '900' }}>{value}</h2>
-            {subtitle && <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.8 }}>{subtitle}</p>}
+
+            {/* Content */}
+            <div style={{ padding: '1.8rem 1.5rem', position: 'relative', zIndex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <div style={{ flex: 1 }}>
+                        <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>{title}</p>
+                        <h3 style={{ fontSize: '2.5rem', fontWeight: '900', color: 'white', margin: '0.5rem 0', lineHeight: 1 }}>{value?.toLocaleString() || 0}</h3>
+                        {subtitle && <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)' }}>{subtitle}</p>}
+                    </div>
+                    <div style={{
+                        padding: '0.9rem',
+                        background: 'rgba(255, 255, 255, 0.2)',
+                        borderRadius: '14px',
+                        backdropFilter: 'blur(10px)',
+                        flexShrink: 0
+                    }}>
+                        <Icon color="white" size={28} />
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 const VolunteerTracker = () => {
     const { token } = useAuth();
@@ -355,8 +385,17 @@ const VolunteerTracker = () => {
     if (loading) {
         return (
             <div style={{ padding: '3rem', textAlign: 'center' }}>
-                <Activity size={48} style={{ animation: 'spin 1s linear infinite' }} />
-                <p style={{ marginTop: '1rem', color: 'var(--text-muted)' }}>Loading volunteer data...</p>
+                <style>{`
+                    @keyframes spin {
+                        to { transform: rotate(360deg); }
+                    }
+                    @keyframes pulse {
+                        0%, 100% { opacity: 1; transform: scale(1); }
+                        50% { opacity: 0.8; transform: scale(1.05); }
+                    }
+                `}</style>
+                <Activity size={48} style={{ animation: 'spin 1s linear infinite', color: '#10b981' }} />
+                <p style={{ marginTop: '1rem', color: 'var(--text-muted)', fontWeight: '600' }}>Loading volunteer data...</p>
             </div>
         );
     }
@@ -370,6 +409,24 @@ const VolunteerTracker = () => {
 
     return (
         <div className="animate-fade-in" style={{ paddingBottom: '5rem' }}>
+            {/* CSS Animations */}
+            <style>{`
+                @keyframes pulse {
+                    0%, 100% { opacity: 1; transform: scale(1); }
+                    50% { opacity: 0.7; transform: scale(1.05); }
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes glow {
+                    0%, 100% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.3); }
+                    50% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); }
+                }
+                .animate-fade-in {
+                    animation: fadeIn 0.4s ease-out;
+                }
+            `}</style>
             {/* Header & Rapid Entry */}
             <div style={{
                 display: 'flex',
@@ -380,40 +437,83 @@ const VolunteerTracker = () => {
                 gap: '1.5rem'
             }}>
                 <div>
-                    <h1 style={{
-                        fontSize: 'clamp(1.8rem, 5vw, 2.5rem)',
-                        fontWeight: '900',
-                        marginBottom: '0.3rem',
-                        background: 'linear-gradient(135deg, #10b981 0%, #14b8a6 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent'
-                    }}>
-                        Live Tracker
-                    </h1>
-                    {/* Study Filter Dropdown */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
-                        <Filter size={16} color="var(--text-muted)" />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                        <h1 style={{
+                            fontSize: 'clamp(2rem, 6vw, 3.5rem)',
+                            fontWeight: '950',
+                            margin: 0,
+                            background: 'linear-gradient(135deg, #10b981 0%, #14b8a6 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            letterSpacing: '-1.5px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.8rem'
+                        }}>
+                            <Activity size={40} color="#10b981" style={{ animation: 'pulse 2s ease-in-out infinite' }} />
+                            Live Tracker
+                        </h1>
+                        {/* Last Updated Badge */}
+                        <div style={{
+                            padding: '0.5rem 1rem',
+                            borderRadius: '12px',
+                            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(20, 184, 166, 0.1) 100%)',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                        }}>
+                            <div style={{
+                                width: '8px',
+                                height: '8px',
+                                borderRadius: '50%',
+                                background: '#10b981',
+                                boxShadow: '0 0 10px rgba(16, 185, 129, 0.5)',
+                                animation: 'pulse 2s ease-in-out infinite'
+                            }} />
+                            <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '700' }}>
+                                Updated {Math.floor((new Date() - lastUpdated) / 1000)}s ago
+                            </span>
+                        </div>
+                    </div>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', margin: '0 0 1rem 0', fontWeight: '500' }}>Real-time attendance monitoring</p>
+
+                    {/* Study Filter Dropdown - Enhanced */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
+                        <div style={{
+                            padding: '0.6rem',
+                            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
+                            borderRadius: '10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            <Filter size={18} color="#6366f1" />
+                        </div>
                         <select
                             value={selectedStudy}
                             onChange={(e) => setSelectedStudy(e.target.value)}
                             style={{
-                                padding: '0.4rem 0.8rem',
-                                borderRadius: '8px',
-                                border: '1px solid var(--border-color)',
+                                padding: '0.7rem 1rem',
+                                borderRadius: '12px',
+                                border: '2px solid rgba(99, 102, 241, 0.2)',
                                 background: 'white',
-                                fontSize: '0.9rem',
-                                fontWeight: '600',
+                                fontSize: '0.95rem',
+                                fontWeight: '700',
                                 color: 'var(--text-primary)',
-                                maxWidth: '300px'
+                                maxWidth: '350px',
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 8px rgba(99, 102, 241, 0.1)',
+                                transition: 'all 0.2s'
                             }}
                         >
-                            <option value="">All Approved Volunteers</option>
+                            <option value="">📋 All Approved Volunteers</option>
                             <option value="SCHEDULED_TODAY">📅 Today's Scheduled Visits</option>
                             <option value="ACTIVE_STUDIES">⚡ All Ongoing/Active Studies</option>
-                            <hr />
+                            <option disabled>──────────</option>
                             {studies.map(s => (
                                 <option key={s._id} value={s._id}>
-                                    {s.studyCode} - {s.studyName}
+                                    🔬 {s.studyCode} - {s.studyName}
                                 </option>
                             ))}
                         </select>
