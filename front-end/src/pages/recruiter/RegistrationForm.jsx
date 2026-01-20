@@ -92,11 +92,11 @@ const RegistrationForm = () => {
         setSubmitting(true);
         setError('');
         try {
-            await api.patch(`/registration/${id}`, formData);
+            const response = await api.patch(`/registration/${id}`, formData);
             navigate('/registration-success', {
                 state: {
                     volunteerId: id,
-                    subjectCode: response.data.subject_code,
+                    subjectCode: response.data?.subject_code,
                     status: formData.fit_status
                 }
             });
