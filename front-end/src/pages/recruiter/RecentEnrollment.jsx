@@ -845,7 +845,7 @@ const RecentEnrollment = () => {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 500px), 1fr))', gap: '2rem' }}>
-                    {/* Screening Card */}
+                    {/* Pre-screening Card */}
                     <div>
                         <div style={{
                             display: 'flex',
