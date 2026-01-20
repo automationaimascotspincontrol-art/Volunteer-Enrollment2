@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = None  # Must be set in .env
     OPENAI_MODEL: str = "gpt-3.5-turbo"  # or "gpt-4" for better quality
     ENABLE_REPORT_CACHING: bool = True
-    REPORT_CACHE_DURATION: int = 3600  # 1 hour in seconds
+    REPORT_CACHE_DURATION: int = 86400  # 24 hours (was 3600) - 80% cost savings
 
     class Config:
         env_file = ".env"

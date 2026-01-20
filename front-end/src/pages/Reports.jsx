@@ -104,7 +104,7 @@ const Reports = () => {
                 <div style={{ marginBottom: '3rem', textAlign: 'center' }}>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', padding: '8px 16px', background: 'white', borderRadius: '100px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                         <Sparkles size={18} style={{ color: '#6366f1' }} />
-                        <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#6366f1' }}>Powered by Google Gemini AI</span>
+                        <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#6366f1' }}>Powered by OpenAI GPT</span>
                     </div>
                     <h1 style={{
                         fontSize: '3.5rem',
