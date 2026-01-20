@@ -155,32 +155,13 @@ const Login = () => {
                     <p style={{
                         fontSize: '1.1rem',
                         color: 'rgba(255, 255, 255, 0.9)',
-                        margin: '0 0 3rem 0',
+                        margin: 0,
                         textTransform: 'uppercase',
                         letterSpacing: '0.3em',
                         fontWeight: '600'
                     }}>
                         Volunteer Recruitment
                     </p>
-
-                    {/* Feature Pills */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
-                        {['🔒 Secure Access', '⚡ Real-time Tracking', '📊 Smart Analytics'].map((feature, i) => (
-                            <div key={i} style={{
-                                padding: '0.75rem 1.5rem',
-                                background: 'rgba(255, 255, 255, 0.15)',
-                                backdropFilter: 'blur(10px)',
-                                borderRadius: '50px',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
-                                color: 'white',
-                                fontSize: '0.95rem',
-                                fontWeight: '600',
-                                animation: `fadeIn 0.8s ease-out ${i * 0.2}s both`
-                            }}>
-                                {feature}
-                            </div>
-                        ))}
-                    </div>
                 </div>
             </div>
 
@@ -325,7 +306,7 @@ const Login = () => {
                         color: '#94a3b8',
                         fontSize: '0.85rem'
                     }}>
-                        <p style={{ margin: 0 }}>© 2026 Mascot Universal Pvt Ltd</p>
+                        <p style={{ margin: 0 }}>© 2026 Mascot Spincontrol Pvt Ltd</p>
                     </div>
                 </div>
             </div>
