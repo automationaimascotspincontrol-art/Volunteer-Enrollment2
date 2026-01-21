@@ -6,6 +6,8 @@ services:
     buildCommand: cd back-end && pip install -r requirements.txt
     startCommand: cd back-end && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
       - key: MONGODB_URL
         sync: false
       - key: SECRET_KEY
