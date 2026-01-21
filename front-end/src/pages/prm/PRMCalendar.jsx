@@ -580,7 +580,7 @@ const PRMCalendar = () => {
                                             </div>
                                         )}
                                         <div style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: '600' }}>
-                                            Washout until: {new Date(study.drtWashoutDate).toLocaleDateString()}
+                                            Report submit till: {new Date(study.drtWashoutDate).toLocaleDateString()}
                                         </div>
                                     </div>
                                 ))}
