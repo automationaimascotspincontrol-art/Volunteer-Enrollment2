@@ -318,12 +318,13 @@ const PRMCalendar = () => {
 
             {/* Calendar Container */}
             <div style={{
-                maxWidth: '1400px',
+                maxWidth: '100%',
+                width: '100%',
                 margin: '0 auto',
                 background: '#ffffff',
                 border: '2px solid #e2e8f0',
                 borderRadius: '24px',
-                padding: '2rem',
+                padding: '1.5rem',
                 boxShadow: '0 10px 40px rgba(0, 0, 0, 0.06)',
                 position: 'relative',
                 overflow: 'hidden'
@@ -453,6 +454,7 @@ const PRMCalendar = () => {
                         .fc .fc-daygrid-day {
                             background: #ffffff;
                             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                            min-height: 110px;
                         }
                         
                         .fc .fc-daygrid-day:hover {
@@ -489,24 +491,28 @@ const PRMCalendar = () => {
                             -webkit-text-fill-color: transparent !important;
                         }
                         
-                        /* Events - Fixed to show colors */
+                        /* Events - Optimized for high density */
                         .fc-event {
-                            border-radius: 8px !important;
+                            border-radius: 6px !important;
                             border: none !important;
-                            padding: 5px 9px !important;
-                            font-size: 0.8125rem !important;
+                            padding: 3px 7px !important;
+                            font-size: 0.75rem !important;
                             font-weight: 600 !important;
                             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
                             cursor: pointer !important;
-                            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+                            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
                             position: relative;
-                            overflow: visible;
+                            overflow: hidden;
                             opacity: 0.95;
+                            margin-bottom: 2px !important;
+                            line-height: 1.3 !important;
+                            white-space: nowrap !important;
+                            text-overflow: ellipsis !important;
                         }
                         
                         .fc-event:hover {
-                            transform: translateY(-2px) scale(1.02) !important;
-                            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2), 0 3px 6px rgba(0, 0, 0, 0.15) !important;
+                            transform: translateY(-1px) scale(1.01) !important;
+                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18) !important;
                             z-index: 10 !important;
                             opacity: 1;
                         }
@@ -532,16 +538,23 @@ const PRMCalendar = () => {
                             padding: 0.75rem !important;
                         }
                         
-                        /* More link */
+                        /* More link - Enhanced visibility */
                         .fc .fc-daygrid-more-link {
-                            color: #6366f1 !important;
-                            font-weight: 600 !important;
+                            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+                            color: white !important;
+                            padding: 4px 10px !important;
+                            border-radius: 6px !important;
+                            font-size: 0.7rem !important;
+                            font-weight: 700 !important;
+                            margin-top: 4px !important;
+                            display: inline-block !important;
+                            box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3) !important;
                             transition: all 0.2s !important;
                         }
                         
                         .fc .fc-daygrid-more-link:hover {
-                            color: #8b5cf6 !important;
-                            transform: scale(1.05);
+                            transform: translateY(-2px) scale(1.05) !important;
+                            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.4) !important;
                         }
                         
                         /* Scrollbar */
@@ -668,10 +681,14 @@ const PRMCalendar = () => {
                                 right: 'dayGridMonth,dayGridWeek'
                             }}
                             events={filteredEvents}
-                            height="75vh"
+                            height="calc(100vh - 280px)"
+                            contentHeight="calc(100vh - 320px)"
                             dateClick={handleDateClick}
                             eventClick={handleEventClick}
-                            dayMaxEvents={3}
+                            dayMaxEvents={true}
+                            dayMaxEventRows={4}
+                            moreLinkClick="popover"
+                            eventDisplay="block"
                             firstDay={1}
                         />
                     )}
