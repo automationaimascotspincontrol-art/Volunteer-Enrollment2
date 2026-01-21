@@ -96,7 +96,7 @@ async def get_dashboard_metrics(
 @router.get("/prm-dashboard/search")
 async def search_dashboard(
     q: str = Query(..., min_length=1),
-    type: str = Query("study", regex="^(study|volunteer)$"),
+    type: str = Query("study", pattern="^(study|volunteer)$"),
     user: UserBase = Depends(get_current_user)
 ):
     """
@@ -210,7 +210,7 @@ async def get_analytics(user: UserBase = Depends(get_current_user)):
 
 @router.get("/prm-dashboard/studies-by-status")
 async def get_studies_by_status(
-    status: str = Query(..., regex="^(ONGOING|UPCOMING|COMPLETED|ongoing|upcoming|completed)$"),
+    status: str = Query(..., pattern="^(ONGOING|UPCOMING|COMPLETED|ongoing|upcoming|completed)$"),
     user: UserBase = Depends(get_current_user)
 ):
     """Get studies filtered by status for SBoard sections"""

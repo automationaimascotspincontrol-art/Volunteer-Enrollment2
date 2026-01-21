@@ -34,5 +34,8 @@ slowapi>=0.1.9
 # Google AI (optional - for AI features)
 google-generativeai>=0.3.0
 
+# OpenAI (optional - for AI features)
+openai>=1.0.0
+
 # Utilities
 python-dateutil>=2.8.2
