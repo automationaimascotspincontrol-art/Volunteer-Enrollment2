@@ -9,6 +9,8 @@ from app.core.config import settings
 # Use certifi for SSL certificate verification to prevent handshake errors
 client = motor.motor_asyncio.AsyncIOMotorClient(
     settings.MONGODB_URL,
+    tls=True,
+    tlsAllowInvalidCertificates=True,
     tlsCAFile=certifi.where()
 )
 db = client[settings.DATABASE_NAME]
