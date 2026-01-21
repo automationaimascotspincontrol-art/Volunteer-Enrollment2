@@ -21,8 +21,8 @@ class Settings(BaseSettings):
     # CORS
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
 
-    # OpenAI Configuration
-    OPENAI_API_KEY: str = None  # Must be set in .env
+    # OpenAI Configuration (Optional - for AI features)
+    OPENAI_API_KEY: str = ""  # Optional - AI features disabled if not set
     OPENAI_MODEL: str = "gpt-3.5-turbo"  # or "gpt-4" for better quality
     ENABLE_REPORT_CACHING: bool = True
     REPORT_CACHE_DURATION: int = 86400  # 24 hours (was 3600) - 80% cost savings
