@@ -249,6 +249,7 @@ async def get_studies_by_status(
         result.append({
             "studyCode": study_code or "N/A",
             "studyName": study.get("studyName", "Unknown Study"),
+            "clientName": study.get("client_name") or study.get("clientName"),
             "startDate": study.get("startDate"),
             "status": study.get("status", "UNKNOWN"),
             "volunteersPlanned": study.get("volunteersPlanned", 0),
