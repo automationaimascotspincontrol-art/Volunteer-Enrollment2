@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Plus, Calendar as CalendarIcon, X, Sparkles, Trash2, AlertTriangle, Users, FileText, Activity, LayoutDashboard, Edit2 } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, X, Sparkles, Trash2, AlertTriangle, Users, FileText, Activity, LayoutDashboard, Edit2, ChevronRight, ChevronLeft, List } from 'lucide-react';
 import CreateStudyModal from '../../components/prm/CreateStudyModal';
 
 const PRMCalendar = () => {
@@ -30,9 +30,14 @@ const PRMCalendar = () => {
     const [isLoadingEvents, setIsLoadingEvents] = useState(true);
     const [isLoadingMetrics, setIsLoadingMetrics] = useState(true);
 
+    // Sidebar State
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [studyInstances, setStudyInstances] = useState([]);
+
     useEffect(() => {
         fetchEvents();
         fetchMetrics();
+        fetchStudyInstances();
     }, []);
 
     const fetchMetrics = async () => {
@@ -60,6 +65,17 @@ const PRMCalendar = () => {
             console.error("Error fetching calendar events:", err);
         } finally {
             setIsLoadingEvents(false);
+        }
+    };
+
+    const fetchStudyInstances = async () => {
+        try {
+            const res = await axios.get('http://localhost:8000/api/v1/study-instances', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setStudyInstances(res.data);
+        } catch (err) {
+            console.error("Error fetching study instances:", err);
         }
     };
 
@@ -118,13 +134,20 @@ const PRMCalendar = () => {
         }
 
         const studyStatus = (props.studyStatus || '').toUpperCase();
-
-        if (activeFilter === 'UPCOMING') return studyStatus === 'UPCOMING';
-        if (activeFilter === 'ONGOING') return studyStatus === 'ONGOING';
-        if (activeFilter === 'COMPLETED') return studyStatus === 'COMPLETED';
-
-        return true;
+        return studyStatus === activeFilter;
     });
+
+    // Group studies by status for sidebar
+    const groupedStudies = {
+        upcoming: studyInstances.filter(s => s.status?.toUpperCase() === 'UPCOMING'),
+        ongoing: studyInstances.filter(s => s.status?.toUpperCase() === 'ONGOING'),
+        completed: studyInstances.filter(s => s.status?.toUpperCase() === 'COMPLETED'),
+        drt: studyInstances.filter(s => s.drtWashoutDate && new Date(s.drtWashoutDate) > new Date())
+    };
+
+    const handleStudyClick = (studyCode) => {
+        navigate(`/prm/dashboard/${studyCode}`);
+    };
 
     return (
         <div style={{
@@ -316,32 +339,299 @@ const PRMCalendar = () => {
                 </div>
             </div>
 
-            {/* Calendar Container */}
-            <div style={{
-                maxWidth: '100%',
-                width: '100%',
-                margin: '0 auto',
-                background: '#ffffff',
-                border: '2px solid #e2e8f0',
-                borderRadius: '24px',
-                padding: '1.5rem',
-                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.06)',
-                position: 'relative',
-                overflow: 'hidden'
-            }}>
-                {/* Subtle gradient overlay */}
-                <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '180px',
-                    background: 'linear-gradient(to bottom, rgba(99, 102, 241, 0.02) 0%, transparent 100%)',
-                    pointerEvents: 'none'
-                }}></div>
+            {/* Main Content: Sidebar + Calendar */}
+            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
 
-                <div style={{ position: 'relative', zIndex: 1 }}>
-                    <style>{`
+                {/* Collapsible Sidebar */}
+                {isSidebarOpen && (
+                    <div style={{
+                        width: '320px',
+                        flexShrink: 0,
+                        background: '#ffffff',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '20px',
+                        padding: '1.5rem',
+                        boxShadow: '0 10px 40px rgba(0, 0, 0, 0.06)',
+                        maxHeight: 'calc(100vh - 280px)',
+                        overflowY: 'auto',
+                        position: 'sticky',
+                        top: '2rem'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <List size={20} />
+                                Study Overview
+                            </h3>
+                            <button
+                                onClick={() => setIsSidebarOpen(false)}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    padding: '4px',
+                                    color: '#64748b'
+                                }}
+                            >
+                                <ChevronLeft size={20} />
+                            </button>
+                        </div>
+
+                        {/* Upcoming Studies */}
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                marginBottom: '0.75rem',
+                                padding: '0.5rem',
+                                background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                                borderRadius: '8px'
+                            }}>
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6' }}></div>
+                                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e40af' }}>
+                                    UPCOMING ({groupedStudies.upcoming.length})
+                                </span>
+                            </div>
+                            {groupedStudies.upcoming.length === 0 ? (
+                                <p style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', paddingLeft: '0.5rem' }}>No upcoming studies</p>
+                            ) : (
+                                groupedStudies.upcoming.map(study => (
+                                    <div
+                                        key={study._id}
+                                        onClick={() => handleStudyClick(study.studyInstanceCode)}
+                                        style={{
+                                            padding: '0.75rem',
+                                            marginBottom: '0.5rem',
+                                            background: '#f8fafc',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.borderColor = '#3b82f6'}
+                                        onMouseLeave={(e) => e.target.style.borderColor = '#e2e8f0'}
+                                    >
+                                        <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>
+                                            {study.studyInstanceCode}
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                            Start: {new Date(study.startDate).toLocaleDateString()}
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                            Volunteers: {study.volunteersPlanned}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Ongoing Studies */}
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                marginBottom: '0.75rem',
+                                padding: '0.5rem',
+                                background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
+                                borderRadius: '8px'
+                            }}>
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></div>
+                                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#065f46' }}>
+                                    ONGOING ({groupedStudies.ongoing.length})
+                                </span>
+                            </div>
+                            {groupedStudies.ongoing.length === 0 ? (
+                                <p style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', paddingLeft: '0.5rem' }}>No ongoing studies</p>
+                            ) : (
+                                groupedStudies.ongoing.map(study => (
+                                    <div
+                                        key={study._id}
+                                        onClick={() => handleStudyClick(study.studyInstanceCode)}
+                                        style={{
+                                            padding: '0.75rem',
+                                            marginBottom: '0.5rem',
+                                            background: '#f8fafc',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.borderColor = '#10b981'}
+                                        onMouseLeave={(e) => e.target.style.borderColor = '#e2e8f0'}
+                                    >
+                                        <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>
+                                            {study.studyInstanceCode}
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                            Started: {new Date(study.startDate).toLocaleDateString()}
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                            Volunteers: {study.volunteersPlanned}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Completed Studies */}
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                marginBottom: '0.75rem',
+                                padding: '0.5rem',
+                                background: 'linear-gradient(135deg, #fed7aa 0%, #fdba74 100%)',
+                                borderRadius: '8px'
+                            }}>
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#fb923c' }}></div>
+                                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#9a3412' }}>
+                                    COMPLETED ({groupedStudies.completed.length})
+                                </span>
+                            </div>
+                            {groupedStudies.completed.length === 0 ? (
+                                <p style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', paddingLeft: '0.5rem' }}>No completed studies</p>
+                            ) : (
+                                groupedStudies.completed.map(study => (
+                                    <div
+                                        key={study._id}
+                                        onClick={() => handleStudyClick(study.studyInstanceCode)}
+                                        style={{
+                                            padding: '0.75rem',
+                                            marginBottom: '0.5rem',
+                                            background: '#f8fafc',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.borderColor = '#fb923c'}
+                                        onMouseLeave={(e) => e.target.style.borderColor = '#e2e8f0'}
+                                    >
+                                        <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>
+                                            {study.studyInstanceCode}
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                            Completed: {new Date(study.startDate).toLocaleDateString()}
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                            Volunteers: {study.volunteersPlanned}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {/* DRT Studies */}
+                        {groupedStudies.drt.length > 0 && (
+                            <div>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    marginBottom: '0.75rem',
+                                    padding: '0.5rem',
+                                    background: 'linear-gradient(135deg, #fecaca 0%, #fca5a5 100%)',
+                                    borderRadius: '8px'
+                                }}>
+                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }}></div>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#991b1b' }}>
+                                        DRT WASHOUT ({groupedStudies.drt.length})
+                                    </span>
+                                </div>
+                                {groupedStudies.drt.map(study => (
+                                    <div
+                                        key={study._id}
+                                        onClick={() => handleStudyClick(study.studyInstanceCode)}
+                                        style={{
+                                            padding: '0.75rem',
+                                            marginBottom: '0.5rem',
+                                            background: '#f8fafc',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.borderColor = '#ef4444'}
+                                        onMouseLeave={(e) => e.target.style.borderColor = '#e2e8f0'}
+                                    >
+                                        <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>
+                                            {study.studyInstanceCode}
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: '600' }}>
+                                            Washout until: {new Date(study.drtWashoutDate).toLocaleDateString()}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Sidebar Toggle Button (when closed) */}
+                {!isSidebarOpen && (
+                    <button
+                        onClick={() => setIsSidebarOpen(true)}
+                        style={{
+                            position: 'fixed',
+                            left: '2rem',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            width: '40px',
+                            height: '100px',
+                            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                            border: 'none',
+                            borderRadius: '0 12px 12px 0',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.3s',
+                            zIndex: 1000
+                        }}
+                        onMouseEnter={(e) => {
+                            e.target.style.width = '48px';
+                            e.target.style.boxShadow = '0 6px 16px rgba(99, 102, 241, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.target.style.width = '40px';
+                            e.target.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)';
+                        }}
+                    >
+                        <ChevronRight size={24} />
+                    </button>
+                )}
+
+                {/* Calendar Container */}
+                <div style={{
+                    flex: 1,
+                    maxWidth: '100%',
+                    width: '100%',
+                    margin: '0 auto',
+                    background: '#ffffff',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '24px',
+                    padding: '1.5rem',
+                    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.06)',
+                    position: 'relative',
+                    overflow: 'hidden'
+                }}>
+                    {/* Subtle gradient overlay */}
+                    <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '180px',
+                        background: 'linear-gradient(to bottom, rgba(99, 102, 241, 0.02) 0%, transparent 100%)',
+                        pointerEvents: 'none'
+                    }}></div>
+
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                        <style>{`
                         /* Keyframe Animations */
                         @keyframes pulse {
                             0%, 100% {
@@ -577,524 +867,525 @@ const PRMCalendar = () => {
                         }
                     `}</style>
 
-                    {/* Loading State */}
-                    {isLoadingEvents ? (
-                        <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            minHeight: '60vh',
-                            gap: '1.5rem'
-                        }}>
+                        {/* Loading State */}
+                        {isLoadingEvents ? (
                             <div style={{
-                                width: '60px',
-                                height: '60px',
-                                border: '4px solid #e2e8f0',
-                                borderTop: '4px solid #6366f1',
-                                borderRadius: '50%',
-                                animation: 'spin 1s linear infinite'
-                            }}></div>
-                            <style>{`
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                minHeight: '60vh',
+                                gap: '1.5rem'
+                            }}>
+                                <div style={{
+                                    width: '60px',
+                                    height: '60px',
+                                    border: '4px solid #e2e8f0',
+                                    borderTop: '4px solid #6366f1',
+                                    borderRadius: '50%',
+                                    animation: 'spin 1s linear infinite'
+                                }}></div>
+                                <style>{`
                                 @keyframes spin {
                                     0% { transform: rotate(0deg); }
                                     100% { transform: rotate(360deg); }
                                 }
                             `}</style>
-                            <p style={{ color: '#64748b', fontSize: '1.1rem', fontWeight: '500' }}>
-                                Loading calendar events...
-                            </p>
-                        </div>
-                    ) : events.length === 0 ? (
-                        /* Empty State */
-                        <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            minHeight: '60vh',
-                            gap: '1.5rem',
-                            padding: '2rem'
-                        }}>
+                                <p style={{ color: '#64748b', fontSize: '1.1rem', fontWeight: '500' }}>
+                                    Loading calendar events...
+                                </p>
+                            </div>
+                        ) : events.length === 0 ? (
+                            /* Empty State */
                             <div style={{
-                                width: '120px',
-                                height: '120px',
-                                background: 'linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)',
-                                borderRadius: '50%',
                                 display: 'flex',
+                                flexDirection: 'column',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                boxShadow: '0 10px 30px rgba(99, 102, 241, 0.15)'
+                                minHeight: '60vh',
+                                gap: '1.5rem',
+                                padding: '2rem'
                             }}>
-                                <CalendarIcon size={60} color="#6366f1" />
-                            </div>
-                            <div style={{ textAlign: 'center', maxWidth: '500px' }}>
-                                <h3 style={{
-                                    fontSize: '1.5rem',
-                                    fontWeight: '700',
-                                    color: '#1e293b',
-                                    marginBottom: '0.5rem'
-                                }}>
-                                    No Studies Scheduled
-                                </h3>
-                                <p style={{
-                                    fontSize: '1rem',
-                                    color: '#64748b',
-                                    lineHeight: '1.6',
-                                    marginBottom: '1.5rem'
-                                }}>
-                                    Get started by creating your first study. Click the "Create Study" button above to schedule a new study instance.
-                                </p>
-                                <button
-                                    onClick={() => { setSelectedDate(new Date()); setIsModalOpen(true); }}
-                                    style={{
-                                        padding: '0.875rem 2rem',
-                                        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                                        color: '#fff',
-                                        border: 'none',
-                                        borderRadius: '12px',
-                                        fontSize: '1rem',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
-                                        transition: 'all 0.3s',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem'
-                                    }}
-                                    onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
-                                    onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
-                                >
-                                    <Plus size={20} />
-                                    Create First Study
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        /* Calendar */
-                        <FullCalendar
-                            plugins={[dayGridPlugin, interactionPlugin]}
-                            initialView="dayGridMonth"
-                            headerToolbar={{
-                                left: 'prev,next today',
-                                center: 'title',
-                                right: 'dayGridMonth,dayGridWeek'
-                            }}
-                            events={filteredEvents}
-                            height="calc(100vh - 280px)"
-                            contentHeight="calc(100vh - 320px)"
-                            dateClick={handleDateClick}
-                            eventClick={handleEventClick}
-                            dayMaxEvents={true}
-                            dayMaxEventRows={4}
-                            moreLinkClick="popover"
-                            eventDisplay="block"
-                            firstDay={1}
-                        />
-                    )}
-                </div>
-            </div>
-
-            {/* Modals */}
-            <CreateStudyModal
-                isOpen={isModalOpen}
-                onClose={() => {
-                    setIsModalOpen(false);
-                    setIsEditMode(false);
-                    setEditStudyData(null);
-                }}
-                date={selectedDate}
-                onStudyCreated={fetchEvents}
-                isEdit={isEditMode}
-                initialData={editStudyData}
-                onStudyUpdated={() => {
-                    fetchEvents();
-                    // Optionally reopen details? For now just refresh calendar
-                }}
-            />
-
-            {/* Visit Details Modal */}
-            {selectedEvent && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    zIndex: 99999,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '20px',
-                    background: 'rgba(0, 0, 0, 0.4)',
-                    backdropFilter: 'blur(4px)'
-                }}>
-                    <div style={{
-                        width: '100%',
-                        maxWidth: '600px',
-                        background: '#ffffff',
-                        borderRadius: '24px',
-                        padding: '2rem',
-                        border: '2px solid #e2e8f0',
-                        boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
-                        position: 'relative',
-                        overflow: 'hidden'
-                    }}>
-                        {/* Header */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1.5rem' }}>
-                            <div>
-                                <h3 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.25rem', lineHeight: 1.2 }}>
-                                    {studyDetails?.studyName || selectedEvent.title.split(' — ')[0]}
-                                </h3>
-                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                    <span style={{
-                                        display: 'inline-block',
-                                        padding: '0.25rem 0.5rem',
-                                        background: '#ede9fe',
-                                        border: '1px solid #ddd6fe',
-                                        borderRadius: '6px',
-                                        color: '#6366f1',
-                                        fontSize: '0.7rem',
-                                        fontWeight: '700',
-                                        fontFamily: 'monospace',
-                                    }}>
-                                        {studyDetails?.studyInstanceCode || selectedEvent.extendedProps?.studyCode || 'N/A'}
-                                    </span>
-                                    <div style={{ padding: '2px 8px', borderRadius: '100px', background: '#ecfccb', color: '#4d7c0f', fontSize: '0.7rem', fontWeight: '700', border: '1px solid #d9f99d' }}>
-                                        {studyDetails ? 'ONGOING' : 'LOADING...'}
-                                    </div>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setSelectedEvent(null)}
-                                style={{
-                                    width: '32px', height: '32px',
-                                    borderRadius: '8px',
-                                    border: 'none',
-                                    background: '#f1f5f9',
-                                    color: '#64748b',
-                                    cursor: 'pointer',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                }}
-                            >
-                                <X size={18} />
-                            </button>
-                        </div>
-
-                        {/* Details Grid */}
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: '1fr 1fr',
-                            gap: '1rem',
-                            marginBottom: '1.5rem',
-                            padding: '1rem',
-                            background: '#f8fafc',
-                            borderRadius: '16px',
-                            border: '1px solid #e2e8f0'
-                        }}>
-                            <div>
-                                <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>REFERENCE ID</label>
-                                <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#334155' }}>
-                                    {studyDetails?.studyID || studyDetails?._id || '...'}
-                                </div>
-                            </div>
-                            <div>
-                                <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>START DATE</label>
-                                <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#334155' }}>
-                                    {studyDetails?.startDate ? new Date(studyDetails.startDate).toLocaleDateString() : '...'}
-                                </div>
-                            </div>
-                            <div>
-                                <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>VOLUNTEERS</label>
-                                <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <Users size={14} />
-                                    {studyDetails?.volunteersPlanned || '0'}
-                                </div>
-                            </div>
-                            <div>
-                                <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>AGE RANGE</label>
-                                <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#334155' }}>
-                                    {studyDetails?.ageRange ? `${studyDetails.ageRange.from} - ${studyDetails.ageRange.to} years` : '...'}
-                                </div>
-                            </div>
-                            <div>
-                                <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>DRT</label>
-                                <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <CalendarIcon size={14} color="#ef4444" />
-                                    {studyDetails?.drtWashoutDate ? new Date(studyDetails.drtWashoutDate).toLocaleDateString() : 'Not set'}
-                                </div>
-                            </div>
-                            <div>
-                                <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>CLIENT NAME</label>
-                                <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#334155' }}>
-                                    {studyDetails?.clientName || 'Not specified'}
-                                </div>
-                            </div>
-                            <div style={{ gridColumn: '1 / -1' }}>
-                                <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>GENDER RATIO</label>
-                                <div style={{ fontSize: '0.85rem', fontWeight: '500', color: '#475569', display: 'flex', gap: '12px' }}>
-                                    {studyDetails?.genderRatio ? (
-                                        <>
-                                            <span style={{ color: '#ec4899' }}>Female: {studyDetails.genderRatio.female}%</span>
-                                            <span style={{ width: '1px', background: '#cbd5e1' }}></span>
-                                            <span style={{ color: '#3b82f6' }}>Male: {studyDetails.genderRatio.male}%</span>
-                                            <span style={{ width: '1px', background: '#cbd5e1' }}></span>
-                                            <span style={{ color: '#8b5cf6' }}>Minor: {studyDetails.genderRatio.minor}%</span>
-                                        </>
-                                    ) : '...'}
-                                </div>
-                            </div>
-                            <div style={{ gridColumn: '1 / -1' }}>
-                                <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>REMARKS</label>
-                                <div style={{ fontSize: '0.85rem', fontWeight: '400', color: '#475569', fontStyle: studyDetails?.remarks ? 'normal' : 'italic' }}>
-                                    {studyDetails?.remarks || 'No remarks provided.'}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Volunteer Assignment Section */}
-                        <div style={{
-                            marginBottom: '1.5rem',
-                            padding: '1.5rem',
-                            background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
-                            borderRadius: '16px',
-                            border: '2px solid #86efac'
-                        }}>
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                marginBottom: '1rem'
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Users size={20} color="#10b981" />
-                                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#047857', textTransform: 'uppercase' }}>
-                                        Quick Assign Volunteers
-                                    </label>
-                                </div>
                                 <div style={{
-                                    padding: '4px 10px',
-                                    background: '#10b981',
-                                    color: '#fff',
-                                    borderRadius: '6px',
-                                    fontSize: '0.7rem',
-                                    fontWeight: '700'
-                                }}>
-                                    {studyDetails?.volunteersPlanned || 0} Needed
-                                </div>
-                            </div>
-
-                            <p style={{ fontSize: '0.85rem', color: '#047857', marginBottom: '1rem' }}>
-                                Assign volunteers to this study. System will automatically check washout periods.
-                            </p>
-
-                            <button
-                                onClick={() => {
-                                    const studyCode = studyDetails?.studyCode || studyDetails?.studyInstanceCode || studyDetails?.enteredStudyCode;
-                                    if (studyCode) {
-                                        navigate(`/prm/dashboard/${studyCode}`);
-                                    } else {
-                                        alert("Study code not found. Please try from the dashboard.");
-                                    }
-                                }}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.875rem',
-                                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                                    color: '#fff',
-                                    border: 'none',
-                                    borderRadius: '12px',
-                                    fontSize: '0.95rem',
-                                    fontWeight: '700',
-                                    cursor: 'pointer',
+                                    width: '120px',
+                                    height: '120px',
+                                    background: 'linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)',
+                                    borderRadius: '50%',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    gap: '0.5rem',
-                                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.35)',
-                                    transition: 'all 0.3s'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.target.style.transform = 'translateY(-2px)';
-                                    e.target.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.45)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.target.style.transform = 'translateY(0)';
-                                    e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.35)';
-                                }}
-                            >
-                                <Users size={18} />
-                                Go to Study Dashboard to Assign
-                            </button>
-
-                            {studyDetails?.drtWashoutDate && (
-                                <div style={{
-                                    marginTop: '0.75rem',
-                                    padding: '0.75rem',
-                                    background: '#fef3c7',
-                                    border: '1px solid #fde68a',
-                                    borderRadius: '8px',
-                                    fontSize: '0.8rem',
-                                    color: '#92400e',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem'
+                                    boxShadow: '0 10px 30px rgba(99, 102, 241, 0.15)'
                                 }}>
-                                    <AlertTriangle size={16} color="#f59e0b" />
-                                    <span>
-                                        <strong>Washout Period:</strong> Volunteers will be blocked from other studies until {new Date(studyDetails.drtWashoutDate).toLocaleDateString()}
-                                    </span>
+                                    <CalendarIcon size={60} color="#6366f1" />
                                 </div>
-                            )}
-                        </div>
-
-                        {/* Selected Visit Section */}
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>SELECTED VISIT</label>
-                            <div style={{
-                                padding: '0.75rem',
-                                background: '#fff',
-                                borderRadius: '12px',
-                                border: '1px solid #e2e8f0',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between'
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <div style={{
-                                        width: '36px', height: '36px', borderRadius: '8px', background: '#ede9fe', color: '#6366f1',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                <div style={{ textAlign: 'center', maxWidth: '500px' }}>
+                                    <h3 style={{
+                                        fontSize: '1.5rem',
+                                        fontWeight: '700',
+                                        color: '#1e293b',
+                                        marginBottom: '0.5rem'
                                     }}>
-                                        <CalendarIcon size={18} />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#1e293b' }}>
-                                            {selectedEvent.title.split(' — ')[1] || 'Visit'}
-                                        </div>
-                                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                                            {selectedEvent.start?.toLocaleDateString()}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div style={{
-                                    padding: '4px 8px', borderRadius: '6px', background: '#f1f5f9', color: '#64748b', fontSize: '0.75rem', fontWeight: '600'
-                                }}>
-                                    {selectedEvent.extendedProps?.status || 'UPCOMING'}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Footer / Delete */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid #f1f5f9' }}>
-                            {isDeleting ? (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', animation: 'fadeIn 0.2s ease' }}>
-                                    <AlertTriangle size={18} color="#ef4444" />
-                                    <span style={{ fontSize: '0.9rem', color: '#ef4444', fontWeight: '600', flex: 1 }}>Delete this study?</span>
+                                        No Studies Scheduled
+                                    </h3>
+                                    <p style={{
+                                        fontSize: '1rem',
+                                        color: '#64748b',
+                                        lineHeight: '1.6',
+                                        marginBottom: '1.5rem'
+                                    }}>
+                                        Get started by creating your first study. Click the "Create Study" button above to schedule a new study instance.
+                                    </p>
                                     <button
-                                        onClick={() => setIsDeleting(false)}
-                                        style={{ padding: '6px 12px', background: '#f1f5f9', borderRadius: '8px', fontWeight: '600', fontSize: '0.85rem', color: '#64748b', border: 'none', cursor: 'pointer' }}>
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={handleDeleteStudy}
-                                        style={{ padding: '6px 12px', background: '#ef4444', borderRadius: '8px', fontWeight: '600', fontSize: '0.85rem', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                                        Permanent Delete
-                                    </button>
-                                </div>
-                            ) : (
-                                <>
-                                    <div style={{ display: 'flex', gap: '10px' }}>
-                                        <button
-                                            onClick={() => setIsDeleting(true)}
-                                            style={{
-                                                padding: '0.6rem 1rem',
-                                                background: '#fff',
-                                                color: '#ef4444',
-                                                border: '1px solid #fecaca',
-                                                borderRadius: '10px',
-                                                fontSize: '0.9rem',
-                                                fontWeight: '600',
-                                                cursor: 'pointer',
-                                                display: 'flex', alignItems: 'center', gap: '6px',
-                                                transition: 'all 0.2s'
-                                            }}
-                                            onMouseEnter={e => e.target.style.background = '#fef2f2'}
-                                            onMouseLeave={e => e.target.style.background = '#fff'}
-                                        >
-                                            <Trash2 size={16} />
-                                            Delete
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                const code = studyDetails?.studyCode || studyDetails?.studyInstanceCode || selectedEvent.extendedProps?.studyCode;
-                                                // Handle potential undefined studyCode
-                                                if (code) navigate(`/prm/dashboard/${code}`);
-                                                else alert("Study Code not found");
-                                            }}
-                                            style={{
-                                                padding: '0.6rem 1rem',
-                                                background: '#f8fafc',
-                                                color: '#6366f1',
-                                                border: '1px solid #e2e8f0',
-                                                borderRadius: '10px',
-                                                fontSize: '0.9rem',
-                                                fontWeight: '600',
-                                                cursor: 'pointer',
-                                                display: 'flex', alignItems: 'center', gap: '6px',
-                                                transition: 'all 0.2s'
-                                            }}
-                                            onMouseEnter={e => e.target.style.background = '#eff6ff'}
-                                            onMouseLeave={e => e.target.style.background = '#f8fafc'}
-                                        >
-                                            <LayoutDashboard size={16} />
-                                            View Board
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                // Open Edit Modal
-                                                setEditStudyData(studyDetails);
-                                                setIsEditMode(true);
-                                                setIsModalOpen(true);
-                                                setSelectedEvent(null); // Close detail modal
-                                            }}
-                                            style={{
-                                                padding: '0.6rem 1rem',
-                                                background: '#f8fafc',
-                                                color: '#0f172a',
-                                                border: '1px solid #e2e8f0',
-                                                borderRadius: '10px',
-                                                fontSize: '0.9rem',
-                                                fontWeight: '600',
-                                                cursor: 'pointer',
-                                                display: 'flex', alignItems: 'center', gap: '6px',
-                                                transition: 'all 0.2s'
-                                            }}
-                                            onMouseEnter={e => e.target.style.background = '#e2e8f0'}
-                                            onMouseLeave={e => e.target.style.background = '#f8fafc'}
-                                        >
-                                            <Edit2 size={16} />
-                                            Edit
-                                        </button>
-                                    </div>
-                                    <button
-                                        onClick={() => setSelectedEvent(null)}
+                                        onClick={() => { setSelectedDate(new Date()); setIsModalOpen(true); }}
                                         style={{
-                                            padding: '0.6rem 1.5rem',
-                                            background: '#1e293b',
+                                            padding: '0.875rem 2rem',
+                                            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
                                             color: '#fff',
                                             border: 'none',
-                                            borderRadius: '10px',
-                                            fontSize: '0.9rem',
+                                            borderRadius: '12px',
+                                            fontSize: '1rem',
                                             fontWeight: '600',
                                             cursor: 'pointer',
-                                            boxShadow: '0 4px 12px rgba(30, 41, 59, 0.2)'
+                                            boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                                            transition: 'all 0.3s',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem'
                                         }}
+                                        onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+                                        onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
                                     >
-                                        Close
+                                        <Plus size={20} />
+                                        Create First Study
                                     </button>
-                                </>
-                            )}
-                        </div>
+                                </div>
+                            </div>
+                        ) : (
+                            /* Calendar */
+                            <FullCalendar
+                                plugins={[dayGridPlugin, interactionPlugin]}
+                                initialView="dayGridMonth"
+                                headerToolbar={{
+                                    left: 'prev,next today',
+                                    center: 'title',
+                                    right: 'dayGridMonth,dayGridWeek'
+                                }}
+                                events={filteredEvents}
+                                height="calc(100vh - 280px)"
+                                contentHeight="calc(100vh - 320px)"
+                                dateClick={handleDateClick}
+                                eventClick={handleEventClick}
+                                dayMaxEvents={true}
+                                dayMaxEventRows={4}
+                                moreLinkClick="popover"
+                                eventDisplay="block"
+                                firstDay={1}
+                            />
+                        )}
                     </div>
                 </div>
-            )}
+
+                {/* Modals */}
+                <CreateStudyModal
+                    isOpen={isModalOpen}
+                    onClose={() => {
+                        setIsModalOpen(false);
+                        setIsEditMode(false);
+                        setEditStudyData(null);
+                    }}
+                    date={selectedDate}
+                    onStudyCreated={fetchEvents}
+                    isEdit={isEditMode}
+                    initialData={editStudyData}
+                    onStudyUpdated={() => {
+                        fetchEvents();
+                        // Optionally reopen details? For now just refresh calendar
+                    }}
+                />
+
+                {/* Visit Details Modal */}
+                {selectedEvent && (
+                    <div style={{
+                        position: 'fixed',
+                        inset: 0,
+                        zIndex: 99999,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '20px',
+                        background: 'rgba(0, 0, 0, 0.4)',
+                        backdropFilter: 'blur(4px)'
+                    }}>
+                        <div style={{
+                            width: '100%',
+                            maxWidth: '600px',
+                            background: '#ffffff',
+                            borderRadius: '24px',
+                            padding: '2rem',
+                            border: '2px solid #e2e8f0',
+                            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
+                            position: 'relative',
+                            overflow: 'hidden'
+                        }}>
+                            {/* Header */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1.5rem' }}>
+                                <div>
+                                    <h3 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.25rem', lineHeight: 1.2 }}>
+                                        {studyDetails?.studyName || selectedEvent.title.split(' — ')[0]}
+                                    </h3>
+                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                        <span style={{
+                                            display: 'inline-block',
+                                            padding: '0.25rem 0.5rem',
+                                            background: '#ede9fe',
+                                            border: '1px solid #ddd6fe',
+                                            borderRadius: '6px',
+                                            color: '#6366f1',
+                                            fontSize: '0.7rem',
+                                            fontWeight: '700',
+                                            fontFamily: 'monospace',
+                                        }}>
+                                            {studyDetails?.studyInstanceCode || selectedEvent.extendedProps?.studyCode || 'N/A'}
+                                        </span>
+                                        <div style={{ padding: '2px 8px', borderRadius: '100px', background: '#ecfccb', color: '#4d7c0f', fontSize: '0.7rem', fontWeight: '700', border: '1px solid #d9f99d' }}>
+                                            {studyDetails ? 'ONGOING' : 'LOADING...'}
+                                        </div>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setSelectedEvent(null)}
+                                    style={{
+                                        width: '32px', height: '32px',
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        background: '#f1f5f9',
+                                        color: '#64748b',
+                                        cursor: 'pointer',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                    }}
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+
+                            {/* Details Grid */}
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr',
+                                gap: '1rem',
+                                marginBottom: '1.5rem',
+                                padding: '1rem',
+                                background: '#f8fafc',
+                                borderRadius: '16px',
+                                border: '1px solid #e2e8f0'
+                            }}>
+                                <div>
+                                    <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>REFERENCE ID</label>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#334155' }}>
+                                        {studyDetails?.studyID || studyDetails?._id || '...'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>START DATE</label>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#334155' }}>
+                                        {studyDetails?.startDate ? new Date(studyDetails.startDate).toLocaleDateString() : '...'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>VOLUNTEERS</label>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <Users size={14} />
+                                        {studyDetails?.volunteersPlanned || '0'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>AGE RANGE</label>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#334155' }}>
+                                        {studyDetails?.ageRange ? `${studyDetails.ageRange.from} - ${studyDetails.ageRange.to} years` : '...'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>DRT</label>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <CalendarIcon size={14} color="#ef4444" />
+                                        {studyDetails?.drtWashoutDate ? new Date(studyDetails.drtWashoutDate).toLocaleDateString() : 'Not set'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>CLIENT NAME</label>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#334155' }}>
+                                        {studyDetails?.clientName || 'Not specified'}
+                                    </div>
+                                </div>
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>GENDER RATIO</label>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: '500', color: '#475569', display: 'flex', gap: '12px' }}>
+                                        {studyDetails?.genderRatio ? (
+                                            <>
+                                                <span style={{ color: '#ec4899' }}>Female: {studyDetails.genderRatio.female}%</span>
+                                                <span style={{ width: '1px', background: '#cbd5e1' }}></span>
+                                                <span style={{ color: '#3b82f6' }}>Male: {studyDetails.genderRatio.male}%</span>
+                                                <span style={{ width: '1px', background: '#cbd5e1' }}></span>
+                                                <span style={{ color: '#8b5cf6' }}>Minor: {studyDetails.genderRatio.minor}%</span>
+                                            </>
+                                        ) : '...'}
+                                    </div>
+                                </div>
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>REMARKS</label>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: '400', color: '#475569', fontStyle: studyDetails?.remarks ? 'normal' : 'italic' }}>
+                                        {studyDetails?.remarks || 'No remarks provided.'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Volunteer Assignment Section */}
+                            <div style={{
+                                marginBottom: '1.5rem',
+                                padding: '1.5rem',
+                                background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
+                                borderRadius: '16px',
+                                border: '2px solid #86efac'
+                            }}>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    marginBottom: '1rem'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <Users size={20} color="#10b981" />
+                                        <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#047857', textTransform: 'uppercase' }}>
+                                            Quick Assign Volunteers
+                                        </label>
+                                    </div>
+                                    <div style={{
+                                        padding: '4px 10px',
+                                        background: '#10b981',
+                                        color: '#fff',
+                                        borderRadius: '6px',
+                                        fontSize: '0.7rem',
+                                        fontWeight: '700'
+                                    }}>
+                                        {studyDetails?.volunteersPlanned || 0} Needed
+                                    </div>
+                                </div>
+
+                                <p style={{ fontSize: '0.85rem', color: '#047857', marginBottom: '1rem' }}>
+                                    Assign volunteers to this study. System will automatically check washout periods.
+                                </p>
+
+                                <button
+                                    onClick={() => {
+                                        const studyCode = studyDetails?.studyCode || studyDetails?.studyInstanceCode || studyDetails?.enteredStudyCode;
+                                        if (studyCode) {
+                                            navigate(`/prm/dashboard/${studyCode}`);
+                                        } else {
+                                            alert("Study code not found. Please try from the dashboard.");
+                                        }
+                                    }}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.875rem',
+                                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                        color: '#fff',
+                                        border: 'none',
+                                        borderRadius: '12px',
+                                        fontSize: '0.95rem',
+                                        fontWeight: '700',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.5rem',
+                                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.35)',
+                                        transition: 'all 0.3s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.transform = 'translateY(-2px)';
+                                        e.target.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.45)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.transform = 'translateY(0)';
+                                        e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.35)';
+                                    }}
+                                >
+                                    <Users size={18} />
+                                    Go to Study Dashboard to Assign
+                                </button>
+
+                                {studyDetails?.drtWashoutDate && (
+                                    <div style={{
+                                        marginTop: '0.75rem',
+                                        padding: '0.75rem',
+                                        background: '#fef3c7',
+                                        border: '1px solid #fde68a',
+                                        borderRadius: '8px',
+                                        fontSize: '0.8rem',
+                                        color: '#92400e',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem'
+                                    }}>
+                                        <AlertTriangle size={16} color="#f59e0b" />
+                                        <span>
+                                            <strong>Washout Period:</strong> Volunteers will be blocked from other studies until {new Date(studyDetails.drtWashoutDate).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Selected Visit Section */}
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>SELECTED VISIT</label>
+                                <div style={{
+                                    padding: '0.75rem',
+                                    background: '#fff',
+                                    borderRadius: '12px',
+                                    border: '1px solid #e2e8f0',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <div style={{
+                                            width: '36px', height: '36px', borderRadius: '8px', background: '#ede9fe', color: '#6366f1',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            <CalendarIcon size={18} />
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#1e293b' }}>
+                                                {selectedEvent.title.split(' — ')[1] || 'Visit'}
+                                            </div>
+                                            <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                                {selectedEvent.start?.toLocaleDateString()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{
+                                        padding: '4px 8px', borderRadius: '6px', background: '#f1f5f9', color: '#64748b', fontSize: '0.75rem', fontWeight: '600'
+                                    }}>
+                                        {selectedEvent.extendedProps?.status || 'UPCOMING'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Footer / Delete */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid #f1f5f9' }}>
+                                {isDeleting ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', animation: 'fadeIn 0.2s ease' }}>
+                                        <AlertTriangle size={18} color="#ef4444" />
+                                        <span style={{ fontSize: '0.9rem', color: '#ef4444', fontWeight: '600', flex: 1 }}>Delete this study?</span>
+                                        <button
+                                            onClick={() => setIsDeleting(false)}
+                                            style={{ padding: '6px 12px', background: '#f1f5f9', borderRadius: '8px', fontWeight: '600', fontSize: '0.85rem', color: '#64748b', border: 'none', cursor: 'pointer' }}>
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={handleDeleteStudy}
+                                            style={{ padding: '6px 12px', background: '#ef4444', borderRadius: '8px', fontWeight: '600', fontSize: '0.85rem', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                                            Permanent Delete
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <button
+                                                onClick={() => setIsDeleting(true)}
+                                                style={{
+                                                    padding: '0.6rem 1rem',
+                                                    background: '#fff',
+                                                    color: '#ef4444',
+                                                    border: '1px solid #fecaca',
+                                                    borderRadius: '10px',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: '600',
+                                                    cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={e => e.target.style.background = '#fef2f2'}
+                                                onMouseLeave={e => e.target.style.background = '#fff'}
+                                            >
+                                                <Trash2 size={16} />
+                                                Delete
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    const code = studyDetails?.studyCode || studyDetails?.studyInstanceCode || selectedEvent.extendedProps?.studyCode;
+                                                    // Handle potential undefined studyCode
+                                                    if (code) navigate(`/prm/dashboard/${code}`);
+                                                    else alert("Study Code not found");
+                                                }}
+                                                style={{
+                                                    padding: '0.6rem 1rem',
+                                                    background: '#f8fafc',
+                                                    color: '#6366f1',
+                                                    border: '1px solid #e2e8f0',
+                                                    borderRadius: '10px',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: '600',
+                                                    cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={e => e.target.style.background = '#eff6ff'}
+                                                onMouseLeave={e => e.target.style.background = '#f8fafc'}
+                                            >
+                                                <LayoutDashboard size={16} />
+                                                View Board
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    // Open Edit Modal
+                                                    setEditStudyData(studyDetails);
+                                                    setIsEditMode(true);
+                                                    setIsModalOpen(true);
+                                                    setSelectedEvent(null); // Close detail modal
+                                                }}
+                                                style={{
+                                                    padding: '0.6rem 1rem',
+                                                    background: '#f8fafc',
+                                                    color: '#0f172a',
+                                                    border: '1px solid #e2e8f0',
+                                                    borderRadius: '10px',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: '600',
+                                                    cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={e => e.target.style.background = '#e2e8f0'}
+                                                onMouseLeave={e => e.target.style.background = '#f8fafc'}
+                                            >
+                                                <Edit2 size={16} />
+                                                Edit
+                                            </button>
+                                        </div>
+                                        <button
+                                            onClick={() => setSelectedEvent(null)}
+                                            style={{
+                                                padding: '0.6rem 1.5rem',
+                                                background: '#1e293b',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '10px',
+                                                fontSize: '0.9rem',
+                                                fontWeight: '600',
+                                                cursor: 'pointer',
+                                                boxShadow: '0 4px 12px rgba(30, 41, 59, 0.2)'
+                                            }}
+                                        >
+                                            Close
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
