@@ -414,6 +414,11 @@ const PRMCalendar = () => {
                                         <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>
                                             {study.studyInstanceCode}
                                         </div>
+                                        {study.clientName && (
+                                            <div style={{ fontSize: '0.75rem', color: '#6366f1', fontWeight: '600', marginBottom: '0.25rem' }}>
+                                                {study.clientName}
+                                            </div>
+                                        )}
                                         <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
                                             Start: {new Date(study.startDate).toLocaleDateString()}
                                         </div>
@@ -463,6 +468,11 @@ const PRMCalendar = () => {
                                         <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>
                                             {study.studyInstanceCode}
                                         </div>
+                                        {study.clientName && (
+                                            <div style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '600', marginBottom: '0.25rem' }}>
+                                                {study.clientName}
+                                            </div>
+                                        )}
                                         <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
                                             Started: {new Date(study.startDate).toLocaleDateString()}
                                         </div>
@@ -512,6 +522,11 @@ const PRMCalendar = () => {
                                         <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>
                                             {study.studyInstanceCode}
                                         </div>
+                                        {study.clientName && (
+                                            <div style={{ fontSize: '0.75rem', color: '#fb923c', fontWeight: '600', marginBottom: '0.25rem' }}>
+                                                {study.clientName}
+                                            </div>
+                                        )}
                                         <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
                                             Completed: {new Date(study.startDate).toLocaleDateString()}
                                         </div>
@@ -537,7 +552,7 @@ const PRMCalendar = () => {
                                 }}>
                                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }}></div>
                                     <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#991b1b' }}>
-                                        DRT WASHOUT ({groupedStudies.drt.length})
+                                        DRT ({groupedStudies.drt.length})
                                     </span>
                                 </div>
                                 {groupedStudies.drt.map(study => (
@@ -559,6 +574,11 @@ const PRMCalendar = () => {
                                         <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>
                                             {study.studyInstanceCode}
                                         </div>
+                                        {study.clientName && (
+                                            <div style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: '600', marginBottom: '0.25rem' }}>
+                                                {study.clientName}
+                                            </div>
+                                        )}
                                         <div style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: '600' }}>
                                             Washout until: {new Date(study.drtWashoutDate).toLocaleDateString()}
                                         </div>
