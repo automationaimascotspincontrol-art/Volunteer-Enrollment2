@@ -38,6 +38,7 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
 
     const [formData, setFormData] = useState({
         enteredStudyCode: '',
+        clientName: '',
         selectedStudies: [],
         volunteersPlanned: '',
         genderRatio: { female: 50, male: 50, minor: 0 },
@@ -66,6 +67,7 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
                 // Pre-fill for Edit
                 setFormData({
                     enteredStudyCode: initialData.studyInstanceCode || initialData.enteredStudyCode || '',
+                    clientName: initialData.clientName || '',
                     selectedStudies: [{
                         _id: initialData._id, // Use instance ID as key for compatibility with timelinePreviews
                         studyName: initialData.studyName,
@@ -102,6 +104,7 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
                 setFormData(prev => ({
                     ...prev,
                     enteredStudyCode: '',
+                    clientName: '',
                     selectedStudies: [],
                     volunteersPlanned: '',
                     genderRatio: { female: 50, male: 50, minor: 0 },
@@ -346,6 +349,7 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
                         studyName: study.studyName, // Should match?
                         enteredStudyCode: formData.enteredStudyCode,
                         studyInstanceCode: formData.enteredStudyCode,
+                        clientName: formData.clientName,
                         volunteersPlanned: parseInt(formData.volunteersPlanned),
                         genderRatio: formData.genderRatio,
                         ageRange: formData.ageRange,
@@ -376,6 +380,7 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
                             studyName: studyMaster.studyName,
                             enteredStudyCode: formData.enteredStudyCode,
                             studyInstanceCode: formData.enteredStudyCode,
+                            clientName: formData.clientName,
                             startDate: dateStr,
                             volunteersPlanned: parseInt(formData.volunteersPlanned),
                             genderRatio: formData.genderRatio,
@@ -394,6 +399,7 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
 
                 setFormData({
                     enteredStudyCode: '',
+                    clientName: '',
                     selectedStudies: [],
                     volunteersPlanned: '',
                     genderRatio: { female: 50, male: 50, minor: 0 },
@@ -558,6 +564,20 @@ const CreateStudyModal = ({ isOpen, onClose, date, onStudyCreated, isEdit = fals
                                     />
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Client Name Input */}
+                        <div style={{ marginBottom: '16px' }}>
+                            <label style={sectionLabelStyle}>Client Name</label>
+                            <input
+                                name="clientName"
+                                value={formData.clientName}
+                                onChange={handleChange}
+                                placeholder="e.g. ABC Pharmaceuticals"
+                                style={inputStyle}
+                                onFocus={(e) => { e.target.style.borderColor = '#6366f1'; e.target.style.background = '#ffffff'; e.target.style.boxShadow = '0 0 0 4px rgba(99,102,241,0.1)'; }}
+                                onBlur={(e) => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc'; e.target.style.boxShadow = 'none'; }}
+                            />
                         </div>
 
                         {/* MultiSelect (Locked in Edit) */}

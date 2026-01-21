@@ -31,6 +31,9 @@ class StudyInstance(Document):
     remarks: Optional[str] = None
     status: StudyStatus = Field(default=StudyStatus.ONGOING)
     
+    # Client information
+    client_name: Optional[str] = Field(default=None, alias="clientName")
+    
     # DRT Washout Period
     drt_washout_date: Optional[datetime] = Field(default=None, alias="drtWashoutDate")
     

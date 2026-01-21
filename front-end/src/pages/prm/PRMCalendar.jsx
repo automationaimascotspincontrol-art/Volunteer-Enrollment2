@@ -804,6 +804,12 @@ const PRMCalendar = () => {
                                     {studyDetails?.drtWashoutDate ? new Date(studyDetails.drtWashoutDate).toLocaleDateString() : 'Not set'}
                                 </div>
                             </div>
+                            <div>
+                                <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>CLIENT NAME</label>
+                                <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#334155' }}>
+                                    {studyDetails?.clientName || 'Not specified'}
+                                </div>
+                            </div>
                             <div style={{ gridColumn: '1 / -1' }}>
                                 <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>GENDER RATIO</label>
                                 <div style={{ fontSize: '0.85rem', fontWeight: '500', color: '#475569', display: 'flex', gap: '12px' }}>
