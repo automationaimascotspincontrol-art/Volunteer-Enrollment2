@@ -232,12 +232,21 @@ async def export_study_data(
     if not results:
         logger.warning(f"No data found for study {study_code}")
         raise HTTPException(status_code=404, detail="No data found for this study")
+    
+    # Get study info for client name (only for authorized roles)
+    user_role = current_user.get("role", "").lower()
+    authorized_roles = ["prm", "management", "gamemaster"]
+    client_name = None
+    if user_role in authorized_roles:
+        study_info = await db.study_instances.find_one({"enteredStudyCode": {"$regex": f"^{study_code}$", "$options": "i"}})
+        if study_info:
+            client_name = study_info.get("clientName")
         
     try:
         # Format for export
         export_list = []
         for idx, r in enumerate(results, 1):
-            export_list.append({
+            row_data = {
                 "Sr. No": idx,
                 "VR No / ID": r["volunteer_id"],
                 "Study Code": r["study_code"],
@@ -252,7 +261,11 @@ async def export_study_data(
                 "Recruiter": r["recruiter"],
                 "Status": str(r["status"]).upper(),
                 "Rejection Reason": r["reason_of_rejection"]
-            })
+            }
+            # Add client name only for authorized roles
+            if client_name is not None:
+                row_data["Client Name"] = client_name or "N/A"
+            export_list.append(row_data)
         
         logger.info(f"Generating detailed Excel export for {len(export_list)} records")
         df = pd.DataFrame(export_list)
@@ -347,13 +360,21 @@ async def get_study_analytics(
         ]
         recruiter_data = await db.assigned_studies.aggregate(recruiter_pipeline).to_list(None)
         
-        # Get study name from study instances
+        # Get study info including client name from study instances
         study_info = await db.study_instances.find_one({"enteredStudyCode": {"$regex": f"^{study_code}$", "$options": "i"}})
         study_name = study_info.get("enteredStudyName") if study_info else study_code
+        
+        # Include client name only for authorized roles
+        user_role = current_user.get("role", "").lower()
+        authorized_roles = ["prm", "management", "gamemaster"]
+        client_name = None
+        if user_role in authorized_roles and study_info:
+            client_name = study_info.get("clientName")
         
         return {
             "study_code": study_code,
             "study_name": study_name,
+            "clientName": client_name,  # Only populated for authorized roles
             "total_participants": total_participants,
             "charts": {
                 "status": status_data,

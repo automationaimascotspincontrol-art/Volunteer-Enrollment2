@@ -399,6 +399,16 @@ const SBoard = () => {
                                 <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', margin: 0 }}>
                                     Detailed enrollment and status analytics
                                 </p>
+                                {studyAnalytics?.clientName && (
+                                    <p style={{
+                                        color: '#10b981',
+                                        fontSize: '0.9rem',
+                                        fontWeight: '600',
+                                        margin: '0.5rem 0 0 0'
+                                    }}>
+                                        Client: {studyAnalytics.clientName}
+                                    </p>
+                                )}
                             </div>
                         </div>
                         <button
@@ -990,6 +1000,7 @@ const SBoard = () => {
                                     <thead style={{ position: 'sticky', top: 0, background: 'linear-gradient(to right, #10b981, #14b8a6)', zIndex: 1 }}>
                                         <tr style={{ textAlign: 'left', color: 'white' }}>
                                             <th style={{ padding: '1rem', fontWeight: '700' }}>Study Code</th>
+                                            <th style={{ padding: '1rem', fontWeight: '700' }}>Client Name</th>
                                             <th style={{ padding: '1rem', fontWeight: '700' }}>Study Name</th>
                                             <th style={{ padding: '1rem', fontWeight: '700' }}>Start Date</th>
                                             <th style={{ padding: '1rem', fontWeight: '700' }}>Volunteers</th>
@@ -1008,6 +1019,9 @@ const SBoard = () => {
                                             >
                                                 <td style={{ padding: '1rem', fontFamily: 'monospace', fontWeight: '600', color: '#6366f1' }}>
                                                     {study.studyCode}
+                                                </td>
+                                                <td style={{ padding: '1rem', fontWeight: '600', color: '#10b981' }}>
+                                                    {study.clientName || 'N/A'}
                                                 </td>
                                                 <td style={{ padding: '1rem', fontWeight: '500', color: '#111827' }}>
                                                     {study.studyName}
