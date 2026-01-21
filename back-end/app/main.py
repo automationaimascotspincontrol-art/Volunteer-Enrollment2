@@ -73,6 +73,7 @@ cors_origins = settings.ALLOWED_ORIGINS.split(",") if settings.ALLOWED_ORIGINS e
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
+    allow_origin_regex="https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-Request-ID", "Accept"],  # Specific headers only
