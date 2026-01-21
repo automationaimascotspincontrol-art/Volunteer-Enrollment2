@@ -81,7 +81,7 @@ const RegistrationForm = () => {
             }
         };
         loadInitialData();
-    }, [id, volunteer]);
+    }, [id]); // Removed 'volunteer' to prevent re-fetching when volunteer updates
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
