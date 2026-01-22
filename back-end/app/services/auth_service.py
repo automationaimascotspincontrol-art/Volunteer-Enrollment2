@@ -2,40 +2,10 @@
 Authentication service.
 Validates credentials, generates tokens, manages user sessions.
 """
-from app.core.security import verify_password, create_access_token, decode_token, get_password_hash
+from app.core.security import verify_password, create_access_token, decode_token
 from app.core.domain_errors import AuthenticationFailed
 from app.db.client import db
 from datetime import timedelta
-
-
-async def register_user(username: str, full_name: str, role: str, password: str) -> dict:
-    """
-    Register a new user.
-    Returns user data.
-    """
-    # Check if user already exists
-    existing = await db.users.find_one({"username": username})
-    if existing:
-        raise ValueError(f"User {username} already exists")
-    
-    # Create new user
-    user_doc = {
-        "username": username,
-        "full_name": full_name,
-        "role": role,
-        "hashed_password": get_password_hash(password),
-        "is_active": True,
-    }
-    
-    result = await db.users.insert_one(user_doc)
-    
-    return {
-        "id": str(result.inserted_id),
-        "username": username,
-        "full_name": full_name,
-        "role": role,
-        "message": "User registered successfully"
-    }
 
 
 async def authenticate_user(username: str, password: str) -> dict:

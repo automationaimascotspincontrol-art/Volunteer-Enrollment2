@@ -38,7 +38,6 @@ async def init_db():
     ])
 
     # ============ Volunteer Master Collection ============
-    # ============ Volunteer Master Collection ============
     master = db.volunteers_master
     await master.create_index("volunteer_id", unique=True)
     await master.create_index("legacy_id")
@@ -84,3 +83,20 @@ async def init_db():
     counters = db.counters
     if not await counters.find_one({"_id": "volunteer_id"}):
         await counters.insert_one({"_id": "volunteer_id", "seq": 0})
+
+    # ============ Seed Initial Superuser ============
+    # Import here to avoid circular dependencies
+    from app.core.security import get_password_hash
+    from datetime import datetime, timezone
+
+    user_count = await db.users.count_documents({})
+    if user_count == 0 and settings.FIRST_SUPERUSER and settings.FIRST_SUPERUSER_PASSWORD:
+        print(f"[INIT] Seeding initial superuser: {settings.FIRST_SUPERUSER}")
+        await db.users.insert_one({
+            "username": settings.FIRST_SUPERUSER,
+            "full_name": "Initial Admin",
+            "role": "game_master",
+            "hashed_password": get_password_hash(settings.FIRST_SUPERUSER_PASSWORD),
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
