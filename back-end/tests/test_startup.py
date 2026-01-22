@@ -8,15 +8,25 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 # Test Config Validation
 def test_config_validation_fails_empty_url():
-    os.environ["MONGODB_URL"] = ""
-    settings = Settings(_env_file=None) # ignore .env for this test
+    # Ensure MONGODB_URL is empty for this test instance
+    # We pass it explicitly to avoid env var interference
+    # Must also pass SECRET_KEY because it's required (non-None str)
+    settings = Settings(
+        MONGODB_URL="",
+        SECRET_KEY="dummy",
+        _env_file=None
+    )
     with pytest.raises(ValueError, match="MONGODB_URL not configured"):
         settings.validate()
 
 def test_config_validation_fails_default_secret():
-    settings = Settings(_env_file=None)
-    settings.SECRET_KEY = "supersecretkey_replace_this_in_production"
-    with pytest.raises(ValueError, match="SECRET_KEY must be set in production"):
+    # We pass a valid MONGODB_URL so we only hit the secret key error
+    settings = Settings(
+        MONGODB_URL="mongodb://localhost:27017",
+        SECRET_KEY="supersecretkey_replace_this_in_production",
+        _env_file=None
+    )
+    with pytest.raises(ValueError, match="SECRET_KEY is not set or is using the insecure default"):
         settings.validate()
 
 # Test DB Connection Failure

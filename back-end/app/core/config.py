@@ -12,11 +12,17 @@ class Settings(BaseSettings):
     # Database
     MONGODB_URL: str = "mongodb://localhost:27017"
     DATABASE_NAME: str = "test_enrollment_db"
+    MONGODB_TLS_VERIFY: bool = True  # Set to False only for local dev with self-signed certs
 
     # Security
     SECRET_KEY: str = None  # Must be set in .env
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 120  # 2 hours (reduced from 8 for security)
+
+    # Initial Superuser (Seeded on first run if DB is empty)
+    # Set these in environment variables to seed an initial admin user
+    FIRST_SUPERUSER: str | None = None
+    FIRST_SUPERUSER_PASSWORD: str | None = None
 
     # CORS
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
@@ -40,8 +46,7 @@ class Settings(BaseSettings):
         App MUST fail to start if validation fails.
         """
         if not self.MONGODB_URL:
-            # raise ValueError("MONGODB_URL not configured")
-            pass # Relaxed for now as per user environment
+            raise ValueError("CRITICAL: MONGODB_URL not configured in environment variables.")
             
         if not self.SECRET_KEY or self.SECRET_KEY == "supersecretkey_replace_this_in_production":
             raise ValueError("CRITICAL: SECRET_KEY is not set or is using the insecure default. Please update your .env file.")

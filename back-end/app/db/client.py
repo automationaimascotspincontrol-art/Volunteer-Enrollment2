@@ -6,11 +6,11 @@ import certifi
 from app.core.config import settings
 
 # MongoDB client (Motor for async)
-# Use certifi for SSL certificate verification to prevent handshake errors
+# Configured to be secure by default (TLS verify enabled) unless overridden in settings.
 client = motor.motor_asyncio.AsyncIOMotorClient(
     settings.MONGODB_URL,
     tls=True,
-    tlsAllowInvalidCertificates=True,
+    tlsAllowInvalidCertificates=not settings.MONGODB_TLS_VERIFY,
     tlsCAFile=certifi.where()
 )
 db = client[settings.DATABASE_NAME]
